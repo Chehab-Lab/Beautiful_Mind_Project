@@ -1,6 +1,7 @@
 """Patient view: record voice notes, review anonymized history, change password."""
 import base64
 import datetime
+import html
 
 import streamlit as st
 
@@ -106,8 +107,13 @@ def _history(patient):
         st.info("You have no saved notes yet.")
         return
     for note in notes:
-        st.markdown(f"**{_fmt_dt(note['created_at'])}**")
-        st.write(note["anonymized_text"])
+        body = html.escape(note["anonymized_text"]).replace("\n", "<br>")
+        st.markdown(
+            f'<div dir="rtl" style="text-align:right">'
+            f'<div style="font-weight:600;color:#5a6072">{_fmt_dt(note["created_at"])}</div>'
+            f'<div style="margin-top:4px">{body}</div></div>',
+            unsafe_allow_html=True,
+        )
         st.divider()
 
 
