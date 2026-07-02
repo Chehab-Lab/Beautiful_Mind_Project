@@ -137,8 +137,12 @@ def main():
     user = st.session_state.get("user")
     if user is None:
         login_view()
-        return
+    else:
+        _render_authenticated(user)
+    theme.footer()
 
+
+def _render_authenticated(user):
     with st.sidebar:
         st.markdown(f"**{user['username']}**")
         st.caption(user["role"].title())

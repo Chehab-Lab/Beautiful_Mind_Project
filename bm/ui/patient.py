@@ -4,12 +4,13 @@ import datetime
 import html
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from bm import ai, audio, repository
 from bm.ui import common, recorder
 
-# GitHub-style contribution palette (empty -> most).
-_HEAT_COLORS = ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]
+# Monochromatic indigo contribution palette (empty -> most).
+_HEAT_COLORS = ["#E9EAF2", "#C7C9F4", "#9A9DEC", "#6E6FE4", "#4F46E5"]
 _HEAT_WEEKS = 26
 
 _MIME_SUFFIX = {
@@ -149,31 +150,53 @@ def _usage(patient):
         for weekday in range(7):
             day = start + datetime.timedelta(days=week * 7 + weekday)
             if day > today:
-                cells.append('<div class="hm-cell hm-empty"></div>')
+                cells.append('<div class="c e"></div>')
                 continue
             value = by_day.get(day, 0)
             color = _HEAT_COLORS[_heat_level(value, max_tokens)]
-            title = f"{value:,} tokens on {day.isoformat()}"
-            cells.append(f'<div class="hm-cell" style="background:{color}" title="{title}"></div>')
-        columns.append(f'<div class="hm-col">{"".join(cells)}</div>')
+            cells.append(
+                f'<div class="c" style="background:{color}" '
+                f'data-d="{day.isoformat()}" data-t="{value}"></div>'
+            )
+        columns.append(f'<div class="col">{"".join(cells)}</div>')
 
-    legend = "".join(f'<div class="hm-cell" style="background:{c}"></div>' for c in _HEAT_COLORS)
-    html = f"""
-<style>
-.hm-wrap {{ overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 4px 0; }}
-.hm-grid {{ display: flex; gap: 3px; min-width: max-content; }}
-.hm-col {{ display: flex; flex-direction: column; gap: 3px; }}
-.hm-cell {{ width: 13px; height: 13px; border-radius: 3px; background: #ebedf0; }}
-.hm-empty {{ background: transparent; }}
-.hm-legend {{ display: flex; align-items: center; gap: 4px; margin-top: 10px;
-    font-size: 0.8rem; color: #5a6072; }}
-</style>
-<div class="hm-wrap"><div class="hm-grid">{"".join(columns)}</div></div>
-<div class="hm-legend">Less {legend} More</div>
-"""
-    st.markdown(html, unsafe_allow_html=True)
+    legend = "".join(f'<span class="c" style="background:{c}"></span>' for c in _HEAT_COLORS)
+    grid = "".join(columns)
+    # Rendered in a component iframe so tapping a day works on mobile (no hover).
+    doc = f"""<!doctype html><html><head><meta charset="utf-8"><style>
+* {{ box-sizing: border-box; }}
+body {{ margin: 0; background: transparent; color: #1F2333;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }}
+.wrap {{ overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 2px 0; }}
+.grid {{ display: flex; gap: 3px; min-width: max-content; }}
+.col {{ display: flex; flex-direction: column; gap: 3px; }}
+.c {{ width: 15px; height: 15px; border-radius: 3px; background: #E9EAF2; }}
+.c.e {{ background: transparent; }}
+.grid .c {{ cursor: pointer; }}
+.grid .c.sel {{ outline: 2px solid #1F2333; outline-offset: 1px; }}
+.readout {{ margin-top: 12px; font-size: 0.92rem; color: #374151; min-height: 1.2em; }}
+.readout b {{ color: #1F2333; }}
+.legend {{ display: flex; align-items: center; gap: 5px; margin-top: 10px;
+    font-size: 0.78rem; color: #6B7280; }}
+.legend .c {{ width: 13px; height: 13px; }}
+</style></head><body>
+<div class="wrap"><div class="grid" id="g">{grid}</div></div>
+<div class="readout" id="r">Tap a day to see its tokens.</div>
+<div class="legend">Less {legend} More</div>
+<script>
+var g = document.getElementById('g'), r = document.getElementById('r'), sel = null;
+g.addEventListener('click', function (e) {{
+  var c = e.target.closest('.c');
+  if (!c || !c.dataset.d) return;
+  if (sel) sel.classList.remove('sel');
+  c.classList.add('sel'); sel = c;
+  var t = parseInt(c.dataset.t || '0', 10);
+  r.innerHTML = '<b>' + t.toLocaleString() + '</b> token' + (t === 1 ? '' : 's') + ' on ' + c.dataset.d;
+}});
+</script></body></html>"""
+    components.html(doc, height=215)
     st.caption(f"Total transcribed tokens per day over the last {_HEAT_WEEKS} weeks. "
-               "Hover a square to see the daily count.")
+               "Tap a square to see its count.")
 
 
 def _account(user):
