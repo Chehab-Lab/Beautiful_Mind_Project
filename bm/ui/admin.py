@@ -1,6 +1,4 @@
-"""Admin view: manage doctors & patients, usage stats, configuration status."""
-import os
-
+"""Admin view: manage doctors and patients, and view usage statistics."""
 import streamlit as st
 
 from bm import repository
@@ -9,8 +7,8 @@ from bm.ui import common
 
 def render(user):
     st.subheader("Administration")
-    tab_doctors, tab_patients, tab_stats, tab_config = st.tabs(
-        ["Doctors", "Patients", "Usage statistics", "Configuration"]
+    tab_doctors, tab_patients, tab_stats = st.tabs(
+        ["Doctors", "Patients", "Usage statistics"]
     )
     with tab_doctors:
         _doctors()
@@ -18,8 +16,6 @@ def render(user):
         _patients()
     with tab_stats:
         _stats()
-    with tab_config:
-        _configuration()
 
 
 # ---------------------------------------------------------------------------
@@ -162,39 +158,3 @@ def _stats():
         for r in rows
     ]
     st.dataframe(table, use_container_width=True, hide_index=True)
-
-
-# ---------------------------------------------------------------------------
-# Secrets
-# ---------------------------------------------------------------------------
-def _secret_present(key):
-    try:
-        if st.secrets.get(key):
-            return True
-    except Exception:  # noqa: BLE001 - no secrets file / not in a Streamlit run
-        pass
-    return bool(os.getenv(key))
-
-
-def _configuration():
-    st.markdown("#### Application configuration")
-    st.caption(
-        "Application secrets are provided through Streamlit secrets "
-        "(.streamlit/secrets.toml locally, or the Streamlit Cloud Secrets "
-        "manager) and are read-only here."
-    )
-    expected = [
-        ("DATABASE_URL", "Database connection"),
-        ("OPENAI_API_KEY", "Voice transcription (OpenAI)"),
-        ("OPENAI_CHAT_MODEL", "Chat model (optional; default gpt-4o-mini)"),
-        ("OPENAI_STT_MODEL", "Speech-to-text model (optional; default whisper-1)"),
-    ]
-    rows = [
-        {
-            "Secret": key,
-            "Purpose": purpose,
-            "Status": "Configured" if _secret_present(key) else "Not set",
-        }
-        for key, purpose in expected
-    ]
-    st.dataframe(rows, use_container_width=True, hide_index=True)
