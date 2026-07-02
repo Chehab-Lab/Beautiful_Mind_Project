@@ -1,0 +1,1 @@
+"""BeautifulMind Streamlit application package."""
