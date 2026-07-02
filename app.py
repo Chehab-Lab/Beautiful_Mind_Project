@@ -32,6 +32,22 @@ REMEMBER_DAYS = 60
 cookie_manager = stx.CookieManager(key="bm_cookie_manager")
 
 
+def _write_pending_cookie():
+    """Persist the login cookie on a run of its own.
+
+    The cookie is written here rather than right after authentication so that
+    no ``st.rerun()`` races the browser's cookie write (a common reason cookies
+    don't stick with Streamlit cookie components).
+    """
+    token = st.session_state.pop("_pending_cookie", None)
+    if token:
+        cookie_manager.set(
+            COOKIE_NAME,
+            token,
+            expires_at=datetime.datetime.now() + datetime.timedelta(days=REMEMBER_DAYS),
+        )
+
+
 def _restore_session():
     """Populate st.session_state['user'] from the persistent login cookie."""
     if st.session_state.get("user"):
@@ -41,6 +57,7 @@ def _restore_session():
         user = repository.get_session_user(token)
         if user:
             st.session_state["user"] = user
+            st.session_state["_auth_token"] = token
 
 
 def login_view():
@@ -55,29 +72,30 @@ def login_view():
         if user is None:
             st.error("Invalid username or password.")
         else:
-            st.session_state["user"] = user
-            # Remember the login in a cookie backed by a server-side session.
             token = repository.create_session(user["id"], days=REMEMBER_DAYS)
-            cookie_manager.set(
-                COOKIE_NAME,
-                token,
-                expires_at=datetime.datetime.now() + datetime.timedelta(days=REMEMBER_DAYS),
-            )
+            st.session_state["user"] = user
+            st.session_state["_auth_token"] = token
+            # Deferred to the next run so the cookie write isn't cut off by rerun.
+            st.session_state["_pending_cookie"] = token
             st.rerun()
 
 
 def logout():
-    token = cookie_manager.get(cookie=COOKIE_NAME)
-    repository.delete_session(token)
+    token = st.session_state.get("_auth_token")
+    if token:
+        repository.delete_session(token)  # server-side invalidation is what matters
     try:
         cookie_manager.delete(COOKIE_NAME)
     except Exception:  # noqa: BLE001 - cookie may already be gone
         pass
     st.session_state.pop("user", None)
+    st.session_state.pop("_auth_token", None)
     st.rerun()
 
 
 def main():
+    # Write a just-issued cookie first (no reader on this run to avoid conflicts).
+    _write_pending_cookie()
     _restore_session()
     user = st.session_state.get("user")
     if user is None:
