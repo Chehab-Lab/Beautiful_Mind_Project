@@ -2,3 +2,4 @@ streamlit>=1.40
 openai>=1.0
 tiktoken
 psycopg2-binary>=2.9
+extra-streamlit-components>=0.1.60

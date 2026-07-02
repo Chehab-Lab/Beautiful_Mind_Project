@@ -53,6 +53,11 @@ def generate_password(length: int = 10) -> str:
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
+def generate_token() -> str:
+    """Generate an opaque session token for the persistent login cookie."""
+    return secrets.token_urlsafe(32)
+
+
 def generate_username(prefix: str) -> str:
     """Generate a unique username with the given prefix, e.g. patient-3f9a2b."""
     while True:

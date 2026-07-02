@@ -35,7 +35,15 @@ def _record(patient):
         return
 
     st.markdown("#### New voice note")
-    clip = st.audio_input("Record your note")
+
+    # Show a one-off confirmation after a note was just saved.
+    if st.session_state.pop("note_saved", False):
+        st.success("Your note was saved. You can record another one, or find it "
+                   "under 'My notes'.")
+
+    # A changing key gives a fresh, empty recorder after each save.
+    round_id = st.session_state.get("recorder_round", 0)
+    clip = st.audio_input("Record your note", key=f"recorder_{round_id}")
     if clip is None:
         return
 
@@ -56,9 +64,10 @@ def _record(patient):
             duration_seconds=duration,
             transcribed_tokens=tokens,
         )
-        st.success(f"Saved. Duration {duration:.1f}s · {tokens} tokens transcribed.")
-        st.markdown("**Anonymized note:**")
-        st.write(anonymized)
+        # Reset back to a clean recorder without revealing the transcription.
+        st.session_state["recorder_round"] = round_id + 1
+        st.session_state["note_saved"] = True
+        st.rerun()
 
 
 def _history(patient):

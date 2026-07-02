@@ -1,5 +1,40 @@
 """Data-access functions for users, doctors, patients, notes and usage."""
+import datetime
+
 from bm import auth, db
+
+
+# ---------------------------------------------------------------------------
+# Persistent login sessions (backing the "remember me" cookie)
+# ---------------------------------------------------------------------------
+def create_session(user_id, days=60):
+    """Create a login session and return its opaque token."""
+    token = auth.generate_token()
+    expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=days)
+    db.query(
+        "INSERT INTO sessions (token, user_id, expires_at) VALUES (%s, %s, %s)",
+        (token, user_id, expires_at),
+        commit=True,
+    )
+    return token
+
+
+def get_session_user(token):
+    """Return the active user for a valid, unexpired session token, else None."""
+    if not token:
+        return None
+    row = db.query(
+        "SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id "
+        "WHERE s.token = %s AND s.expires_at > now() AND u.is_active = TRUE",
+        (token,),
+        fetch="one",
+    )
+    return dict(row) if row else None
+
+
+def delete_session(token):
+    if token:
+        db.query("DELETE FROM sessions WHERE token = %s", (token,), commit=True)
 
 
 # ---------------------------------------------------------------------------
