@@ -12,9 +12,12 @@ streamlit run app.py
 ```
 
 ## Configuration
-Provide the following as application secrets or environment variables:
+Data is stored in a Supabase (PostgreSQL) database. Set the connection string,
+and optionally the OpenAI credentials, in `.streamlit/secrets.toml` locally (see
+`.streamlit/secrets.toml.example`) or in the Streamlit Cloud Secrets manager:
 
-- `OPENAI_API_KEY` (required for transcription)
+- `DATABASE_URL` (required): Supabase Postgres connection string
+- `OPENAI_API_KEY` (required for transcription; can also be set by an admin in-app)
 - `OPENAI_CHAT_MODEL` (default `gpt-4o-mini`)
 - `OPENAI_STT_MODEL` (default `whisper-1`)
 

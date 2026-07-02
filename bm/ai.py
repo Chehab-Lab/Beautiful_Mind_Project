@@ -20,8 +20,18 @@ class AIServiceError(RuntimeError):
     """Raised when a downstream OpenAI call fails."""
 
 
+def _st_secret(key):
+    try:
+        import streamlit as st
+
+        return st.secrets.get(key)
+    except Exception:  # noqa: BLE001 - no secrets file / not in a Streamlit run
+        return None
+
+
 def _secret(key, env_default=None):
-    return repository.get_secret(key) or os.getenv(key) or env_default
+    # Admin-managed DB secret first, then st.secrets, then environment.
+    return repository.get_secret(key) or _st_secret(key) or os.getenv(key) or env_default
 
 
 def get_api_key():

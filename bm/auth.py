@@ -1,7 +1,6 @@
 """Authentication helpers: password hashing, login and credential generation."""
 import hashlib
 import hmac
-import os
 import secrets
 import string
 
@@ -27,11 +26,11 @@ def verify_password(password: str, password_hash: str, salt: str) -> bool:
 
 def authenticate(username: str, password: str) -> dict | None:
     """Return the user row (as a dict) on success, otherwise None."""
-    conn = db.get_conn()
-    row = conn.execute(
-        "SELECT * FROM users WHERE username = ? AND is_active = 1",
+    row = db.query(
+        "SELECT * FROM users WHERE username = %s AND is_active = TRUE",
         (username.strip().lower(),),
-    ).fetchone()
+        fetch="one",
+    )
     if row is None:
         return None
     if not verify_password(password, row["password_hash"], row["salt"]):
@@ -41,12 +40,11 @@ def authenticate(username: str, password: str) -> dict | None:
 
 def set_password(user_id: int, new_password: str, clear_must_change: bool = True) -> None:
     pw_hash, salt = hash_password(new_password)
-    conn = db.get_conn()
-    conn.execute(
-        "UPDATE users SET password_hash = ?, salt = ?, must_change_password = ? WHERE id = ?",
-        (pw_hash, salt, 0 if clear_must_change else 1, user_id),
+    db.query(
+        "UPDATE users SET password_hash = %s, salt = %s, must_change_password = %s WHERE id = %s",
+        (pw_hash, salt, not clear_must_change, user_id),
+        commit=True,
     )
-    conn.commit()
 
 
 def generate_password(length: int = 10) -> str:
@@ -57,11 +55,10 @@ def generate_password(length: int = 10) -> str:
 
 def generate_username(prefix: str) -> str:
     """Generate a unique username with the given prefix, e.g. patient-3f9a2b."""
-    conn = db.get_conn()
     while True:
         candidate = f"{prefix}-{secrets.token_hex(3)}"
-        exists = conn.execute(
-            "SELECT 1 FROM users WHERE username = ?", (candidate,)
-        ).fetchone()
+        exists = db.query(
+            "SELECT 1 FROM users WHERE username = %s", (candidate,), fetch="one"
+        )
         if exists is None:
             return candidate
