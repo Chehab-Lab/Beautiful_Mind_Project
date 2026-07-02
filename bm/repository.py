@@ -202,31 +202,3 @@ def usage_per_patient():
         fetch="all",
     )
     return [dict(r) for r in rows]
-
-
-# ---------------------------------------------------------------------------
-# Secrets
-# ---------------------------------------------------------------------------
-def set_secret(key, value):
-    db.query(
-        "INSERT INTO secrets (key, value, updated_at) VALUES (%s, %s, now()) "
-        "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()",
-        (key.strip(), value),
-        commit=True,
-    )
-
-
-def get_secret(key, default=None):
-    row = db.query("SELECT value FROM secrets WHERE key = %s", (key,), fetch="one")
-    return row["value"] if row else default
-
-
-def list_secrets():
-    rows = db.query(
-        "SELECT key, value, updated_at FROM secrets ORDER BY key", fetch="all"
-    )
-    return [dict(r) for r in rows]
-
-
-def delete_secret(key):
-    db.query("DELETE FROM secrets WHERE key = %s", (key,), commit=True)

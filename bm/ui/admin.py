@@ -1,14 +1,16 @@
-"""Admin view: manage doctors & patients, usage stats, application secrets."""
+"""Admin view: manage doctors & patients, usage stats, configuration status."""
+import os
+
 import streamlit as st
 
-from bm import auth, repository
+from bm import repository
 from bm.ui import common
 
 
 def render(user):
     st.subheader("Administration")
-    tab_doctors, tab_patients, tab_stats, tab_secrets = st.tabs(
-        ["Doctors", "Patients", "Usage statistics", "Application secrets"]
+    tab_doctors, tab_patients, tab_stats, tab_config = st.tabs(
+        ["Doctors", "Patients", "Usage statistics", "Configuration"]
     )
     with tab_doctors:
         _doctors()
@@ -16,8 +18,8 @@ def render(user):
         _patients()
     with tab_stats:
         _stats()
-    with tab_secrets:
-        _secrets()
+    with tab_config:
+        _configuration()
 
 
 # ---------------------------------------------------------------------------
@@ -165,34 +167,34 @@ def _stats():
 # ---------------------------------------------------------------------------
 # Secrets
 # ---------------------------------------------------------------------------
-def _secrets():
-    st.markdown("#### Application secrets")
-    st.caption(
-        "Stored secrets are used by the app at runtime (e.g. OPENAI_API_KEY, "
-        "OPENAI_CHAT_MODEL, OPENAI_STT_MODEL for voice transcription)."
-    )
-    with st.form("add_secret"):
-        key = st.text_input("Key", placeholder="OPENAI_API_KEY")
-        value = st.text_input("Value", type="password")
-        submitted = st.form_submit_button("Save secret", type="primary")
-    if submitted:
-        if not key or not value:
-            st.error("Both key and value are required.")
-        else:
-            repository.set_secret(key, value)
-            st.success(f"Secret '{key.strip()}' saved.")
-            st.rerun()
+def _secret_present(key):
+    try:
+        if st.secrets.get(key):
+            return True
+    except Exception:  # noqa: BLE001 - no secrets file / not in a Streamlit run
+        pass
+    return bool(os.getenv(key))
 
-    st.divider()
-    secrets_rows = repository.list_secrets()
-    if not secrets_rows:
-        st.info("No secrets stored yet.")
-        return
-    for s in secrets_rows:
-        c1, c2, c3 = st.columns([3, 3, 1])
-        c1.text(s["key"])
-        masked = (s["value"][:2] + "•" * max(len(s["value"]) - 2, 0)) if s["value"] else ""
-        c2.text(masked)
-        if c3.button("Delete", key=f"sdel_{s['key']}"):
-            repository.delete_secret(s["key"])
-            st.rerun()
+
+def _configuration():
+    st.markdown("#### Application configuration")
+    st.caption(
+        "Application secrets are provided through Streamlit secrets "
+        "(.streamlit/secrets.toml locally, or the Streamlit Cloud Secrets "
+        "manager) and are read-only here."
+    )
+    expected = [
+        ("DATABASE_URL", "Database connection"),
+        ("OPENAI_API_KEY", "Voice transcription (OpenAI)"),
+        ("OPENAI_CHAT_MODEL", "Chat model (optional; default gpt-4o-mini)"),
+        ("OPENAI_STT_MODEL", "Speech-to-text model (optional; default whisper-1)"),
+    ]
+    rows = [
+        {
+            "Secret": key,
+            "Purpose": purpose,
+            "Status": "Configured" if _secret_present(key) else "Not set",
+        }
+        for key, purpose in expected
+    ]
+    st.dataframe(rows, use_container_width=True, hide_index=True)

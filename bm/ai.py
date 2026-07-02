@@ -2,14 +2,12 @@
 
 This is a direct port of the original ``ai`` microservice (``src/stt.py`` and
 ``src/anonymizer.py``), collapsed into in-process helper functions. Credentials
-and model names are read from application secrets (managed by the admin) with a
-fallback to environment variables, so no separate service is required.
+and model names are read from Streamlit secrets (``st.secrets``) with a fallback
+to environment variables, so no separate service is required.
 """
 import hashlib
 import json
 import os
-
-from bm import repository
 
 
 class AIConfigError(RuntimeError):
@@ -30,16 +28,16 @@ def _st_secret(key):
 
 
 def _secret(key, env_default=None):
-    # Admin-managed DB secret first, then st.secrets, then environment.
-    return repository.get_secret(key) or _st_secret(key) or os.getenv(key) or env_default
+    # Read application secrets from st.secrets, falling back to the environment.
+    return _st_secret(key) or os.getenv(key) or env_default
 
 
 def get_api_key():
     key = _secret("OPENAI_API_KEY")
     if not key:
         raise AIConfigError(
-            "OpenAI API key is not configured. Ask an admin to add the "
-            "'OPENAI_API_KEY' secret under Application Secrets."
+            "OpenAI API key is not configured. Add 'OPENAI_API_KEY' to the "
+            "app's Streamlit secrets."
         )
     return key
 
