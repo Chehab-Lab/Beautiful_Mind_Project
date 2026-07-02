@@ -50,8 +50,38 @@ def _write_pending_cookie():
         )
 
 
-def _restore_session():
-    """Populate st.session_state['user'] from the persistent login cookie."""
+def _boot_splash():
+    """Loading screen shown while the browser reports the auth cookie."""
+    st.markdown(
+        """
+<style>
+@keyframes bmPulse {
+    0%, 100% { transform: scale(0.82); opacity: 0.65; }
+    50%      { transform: scale(1.25); opacity: 1; }
+}
+.bm-splash {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 60vh; gap: 16px;
+}
+.bm-splash .emoji { font-size: 66px; animation: bmPulse 1.1s ease-in-out infinite; }
+.bm-splash .cap { color: #5a6072; font-size: 1.05rem; letter-spacing: 0.03em; }
+</style>
+<div class="bm-splash">
+    <div class="emoji">🧠</div>
+    <div class="cap">loading …</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def _restore_or_wait():
+    """Restore the user from the cookie, or show the splash for one boot cycle.
+
+    The cookie component reports ``{}`` both before it has loaded and when there
+    is genuinely no cookie, so we wait exactly one run: on the first boot run we
+    show the splash; by the next run the browser has reported the real cookie.
+    """
     if st.session_state.get("user"):
         return
     token = cookie_manager.get(cookie=COOKIE_NAME)
@@ -60,6 +90,11 @@ def _restore_session():
         if user:
             st.session_state["user"] = user
             st.session_state["_auth_token"] = token
+        return
+    if not st.session_state.get("_boot_waited"):
+        st.session_state["_boot_waited"] = True
+        _boot_splash()
+        st.stop()
 
 
 def login_view():
@@ -98,7 +133,7 @@ def logout():
 def main():
     # Write a just-issued cookie first (no reader on this run to avoid conflicts).
     _write_pending_cookie()
-    _restore_session()
+    _restore_or_wait()
     user = st.session_state.get("user")
     if user is None:
         login_view()
