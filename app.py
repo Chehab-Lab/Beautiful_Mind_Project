@@ -20,9 +20,11 @@ from bm.ui import admin as admin_ui  # noqa: E402
 from bm.ui import common  # noqa: E402
 from bm.ui import doctor as doctor_ui  # noqa: E402
 from bm.ui import patient as patient_ui  # noqa: E402
+from bm.ui import theme  # noqa: E402
 
 st.set_page_config(page_title="BeautifulMind", page_icon="🧠", layout="centered")
 
+theme.inject()
 db.init_db()
 
 COOKIE_NAME = "bm_auth"
@@ -125,6 +127,8 @@ def main():
         admin_ui.render(user)
     else:
         st.error("Unknown role.")
+
+    theme.floating_back_to_top()
 
 
 main()
