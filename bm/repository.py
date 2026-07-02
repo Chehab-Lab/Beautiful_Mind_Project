@@ -208,6 +208,18 @@ def list_notes(patient_id):
     return [dict(r) for r in rows]
 
 
+def usage_tokens_by_day(patient_id):
+    """Return {date: total_transcribed_tokens} for one patient."""
+    rows = db.query(
+        "SELECT created_at::date AS day, "
+        "COALESCE(SUM(transcribed_tokens), 0) AS tokens "
+        "FROM usage_events WHERE patient_id = %s GROUP BY day",
+        (patient_id,),
+        fetch="all",
+    )
+    return {r["day"]: int(r["tokens"]) for r in rows}
+
+
 # ---------------------------------------------------------------------------
 # Usage statistics
 # ---------------------------------------------------------------------------
