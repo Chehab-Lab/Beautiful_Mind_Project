@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: transparent;
+  }
+  .wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 18px 0 8px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .stage {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(76, 111, 255, 0.18);
+    transform: scale(1);
+    transition: background 0.2s ease;
+    will-change: transform;
+  }
+  .ring.rec { background: rgba(255, 59, 48, 0.22); }
+  .btn {
+    position: relative;
+    width: 112px;
+    height: 112px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #5b7cff, #4C6FFF);
+    box-shadow: 0 10px 24px rgba(76, 111, 255, 0.45);
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn.rec {
+    background: linear-gradient(135deg, #ff5b52, #ff3b30);
+    box-shadow: 0 10px 24px rgba(255, 59, 48, 0.5);
+  }
+  /* idle = triangle (record), recording = square (stop) */
+  .btn.idle .ico {
+    width: 0; height: 0;
+    border-style: solid;
+    border-width: 17px 0 17px 28px;
+    border-color: transparent transparent transparent #fff;
+    margin-left: 7px;
+  }
+  .btn.rec .ico {
+    width: 30px; height: 30px;
+    background: #fff;
+    border-radius: 7px;
+  }
+  .hint {
+    font-size: 0.95rem;
+    color: #5a6072;
+    min-height: 1.2em;
+    text-align: center;
+  }
+  .hint.err { color: #ff3b30; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="stage">
+      <div class="ring" id="ring"></div>
+      <button class="btn idle" id="btn" aria-label="Record"><span class="ico"></span></button>
+    </div>
+    <div class="hint" id="hint">Long‑press to record</div>
+  </div>
+
+<script>
+// ---- Minimal Streamlit component protocol (no build step) ----
+const Streamlit = (function () {
+  function send(type, data) {
+    window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, data), "*");
+  }
+  return {
+    setComponentReady: function () { send("streamlit:componentReady", { apiVersion: 1 }); },
+    setFrameHeight: function (h) { send("streamlit:setFrameHeight", { height: h }); },
+    setComponentValue: function (v) { send("streamlit:setComponentValue", { value: v, dataType: "json" }); },
+    onRender: function (cb) {
+      window.addEventListener("message", function (e) {
+        if (e.data && e.data.type === "streamlit:render") cb(e.data);
+      });
+    },
+  };
+})();
+
+const btn = document.getElementById("btn");
+const ring = document.getElementById("ring");
+const hint = document.getElementById("hint");
+
+let mediaRecorder = null, chunks = [], stream = null;
+let audioCtx = null, analyser = null, rafId = null;
+let recording = false, startTime = 0, pickedMime = "";
+let pressTimer = null, justStarted = false;
+
+function pickMime() {
+  const cands = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", "audio/ogg"];
+  for (const m of cands) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return "";
+}
+
+function setUI(rec) {
+  btn.classList.toggle("rec", rec);
+  btn.classList.toggle("idle", !rec);
+  ring.classList.toggle("rec", rec);
+  if (!rec) ring.style.transform = "scale(1)";
+  hint.classList.remove("err");
+  hint.textContent = rec ? "Recording… tap to stop" : "Long‑press to record";
+}
+
+function meter() {
+  if (!analyser) return;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteTimeDomainData(data);
+  let sum = 0;
+  for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
+  const rms = Math.sqrt(sum / data.length);
+  const scale = 1 + Math.min(rms * 3.2, 0.75);
+  ring.style.transform = "scale(" + scale.toFixed(3) + ")";
+  rafId = requestAnimationFrame(meter);
+}
+
+async function beginRecording() {
+  if (recording) return;
+  justStarted = true; // swallow the click that pairs with the initiating press
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    hint.classList.add("err");
+    hint.textContent = "Microphone permission denied";
+    return;
+  }
+  pickedMime = pickMime();
+  try {
+    mediaRecorder = pickedMime ? new MediaRecorder(stream, { mimeType: pickedMime })
+                               : new MediaRecorder(stream);
+  } catch (err) {
+    mediaRecorder = new MediaRecorder(stream);
+  }
+  chunks = [];
+  mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+  mediaRecorder.onstop = onStop;
+  mediaRecorder.start();
+  startTime = Date.now();
+  recording = true;
+  setUI(true);
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser);
+    meter();
+  } catch (err) { /* visual meter is optional */ }
+}
+
+function stopRecording() {
+  if (!recording) return;
+  recording = false;
+  try { mediaRecorder.stop(); } catch (err) {}
+  if (rafId) cancelAnimationFrame(rafId);
+}
+
+function onStop() {
+  const duration = (Date.now() - startTime) / 1000;
+  try { stream.getTracks().forEach((t) => t.stop()); } catch (err) {}
+  try { if (audioCtx) audioCtx.close(); } catch (err) {}
+  analyser = null;
+  const blob = new Blob(chunks, { type: pickedMime || "audio/webm" });
+  const reader = new FileReader();
+  reader.onloadend = function () {
+    const b64 = String(reader.result).split(",")[1] || "";
+    Streamlit.setComponentValue({
+      id: Date.now(),
+      audio: b64,
+      mime: pickedMime || "audio/webm",
+      duration: duration,
+    });
+  };
+  reader.readAsDataURL(blob);
+  setUI(false);
+}
+
+// ---- Interaction: long-press to start, tap to stop ----
+btn.addEventListener("contextmenu", (e) => e.preventDefault());
+
+btn.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  if (recording) return;
+  pressTimer = setTimeout(() => { pressTimer = null; beginRecording(); }, 350);
+});
+
+function clearPress() {
+  if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+}
+btn.addEventListener("pointerup", clearPress);
+btn.addEventListener("pointercancel", clearPress);
+btn.addEventListener("pointerleave", clearPress);
+
+btn.addEventListener("click", () => {
+  if (justStarted) { justStarted = false; return; }
+  if (recording) stopRecording();
+});
+
+Streamlit.onRender(() => Streamlit.setFrameHeight(230));
+Streamlit.setComponentReady();
+Streamlit.setFrameHeight(230);
+</script>
+</body>
+</html>

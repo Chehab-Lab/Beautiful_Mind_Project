@@ -85,43 +85,15 @@ div[data-testid="stExpander"] {
     overflow: hidden;
 }
 
-/* ----- Audio recorder full width ----- */
-div[data-testid="stAudioInput"] { border-radius: 12px; }
-
-/* ----- Floating action button ----- */
-a.bm-fab {
-    position: fixed;
-    right: 16px;
-    bottom: 18px;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: var(--bm-primary);
-    color: #fff !important;
-    font-size: 22px;
-    line-height: 1;
-    text-decoration: none;
-    box-shadow: 0 8px 20px rgba(76, 111, 255, 0.45);
-}
-a.bm-fab:hover { filter: brightness(1.06); }
-
 /* ----- Roomier sidebar on mobile drawer ----- */
 section[data-testid="stSidebar"] { border-right: 1px solid #eceef5; }
+
+/* ----- Custom recorder component sits flush and centered ----- */
+iframe[title="bm_voice_recorder"] { width: 100%; }
 </style>
-<span id="bm-top"></span>
 """
 
 
 def inject() -> None:
     """Inject the global mobile-first stylesheet. Call once per run."""
     st.markdown(_CSS, unsafe_allow_html=True)
-
-
-def floating_back_to_top() -> None:
-    """Render a floating button that scrolls back to the top of the page."""
-    st.markdown('<a class="bm-fab" href="#bm-top" title="Back to top">&#8679;</a>',
-                unsafe_allow_html=True)

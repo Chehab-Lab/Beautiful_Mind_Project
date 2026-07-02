@@ -1,8 +1,24 @@
 """Patient view: record voice notes, review anonymized history, change password."""
+import base64
+
 import streamlit as st
 
 from bm import ai, audio, repository
-from bm.ui import common
+from bm.ui import common, recorder
+
+_MIME_SUFFIX = {
+    "audio/webm": ".webm",
+    "audio/ogg": ".ogg",
+    "audio/mp4": ".mp4",
+    "audio/aac": ".aac",
+    "audio/mpeg": ".mp3",
+    "audio/wav": ".wav",
+}
+
+
+def _suffix_for(mime):
+    base = (mime or "").split(";")[0].strip()
+    return _MIME_SUFFIX.get(base, ".webm")
 
 
 def render(user):
@@ -34,40 +50,39 @@ def _record(patient):
         )
         return
 
-    st.markdown("#### New voice note")
-
     # Show a one-off confirmation after a note was just saved.
     if st.session_state.pop("note_saved", False):
         st.success("Your note was saved. You can record another one, or find it "
                    "under 'My notes'.")
 
-    # A changing key gives a fresh, empty recorder after each save.
-    round_id = st.session_state.get("recorder_round", 0)
-    clip = st.audio_input("Record your note", key=f"recorder_{round_id}")
-    if clip is None:
+    result = recorder.record_button(key="voice_recorder")
+    if not result or not result.get("audio"):
         return
+    # Ignore reruns that replay the same recording.
+    if result.get("id") == st.session_state.get("last_record_id"):
+        return
+    st.session_state["last_record_id"] = result.get("id")
 
-    if st.button("Transcribe & save", type="primary"):
-        audio_bytes = clip.getvalue()
-        duration = audio.wav_duration_seconds(audio_bytes)
-        with st.spinner("Transcribing and anonymizing…"):
-            try:
-                transcript = ai.transcribe(audio_bytes)
-                anonymized = ai.anonymize(transcript)
-            except (ai.AIServiceError, ai.AIConfigError) as exc:
-                st.error(str(exc))
-                return
-        tokens = audio.count_tokens(transcript)
-        repository.add_note_with_usage(
-            patient_id=patient["id"],
-            anonymized_text=anonymized,
-            duration_seconds=duration,
-            transcribed_tokens=tokens,
-        )
-        # Reset back to a clean recorder without revealing the transcription.
-        st.session_state["recorder_round"] = round_id + 1
-        st.session_state["note_saved"] = True
-        st.rerun()
+    audio_bytes = base64.b64decode(result["audio"])
+    duration = float(result.get("duration") or 0)
+    suffix = _suffix_for(result.get("mime"))
+    with st.spinner("Transcribing and anonymizing…"):
+        try:
+            transcript = ai.transcribe(audio_bytes, suffix=suffix)
+            anonymized = ai.anonymize(transcript)
+        except (ai.AIServiceError, ai.AIConfigError) as exc:
+            st.error(str(exc))
+            return
+    tokens = audio.count_tokens(transcript)
+    repository.add_note_with_usage(
+        patient_id=patient["id"],
+        anonymized_text=anonymized,
+        duration_seconds=duration,
+        transcribed_tokens=tokens,
+    )
+    # Return to a clean recorder without revealing the transcription.
+    st.session_state["note_saved"] = True
+    st.rerun()
 
 
 def _history(patient):

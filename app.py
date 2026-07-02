@@ -128,7 +128,5 @@ def main():
     else:
         st.error("Unknown role.")
 
-    theme.floating_back_to_top()
-
 
 main()
