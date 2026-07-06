@@ -155,69 +155,51 @@ iframe[title="bm_voice_recorder"] { width: 100%; }
 
 _LANDING_CSS = """
 <style>
-/* ----- Nav bar: plain black wordmark + About link ----- */
-.bm-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 1.15rem 0.1rem;
-    margin-bottom: 2.4rem;
-    border-bottom: 1px solid var(--bm-border);
+/* ----- Nav bar: plain black wordmark (not a link) + an About/Home toggle
+   button. The toggle is a real Streamlit button so switching pages reruns
+   the app in place instead of doing a browser navigation. ----- */
+div[class*="st-key-bm_nav"] {
     position: sticky;
     top: 0;
     z-index: 50;
     background: var(--bm-surface);
+    border-bottom: 1px solid var(--bm-border);
+    padding: 0.9rem 0 0.7rem;
+    margin-bottom: 2.2rem;
 }
 .bm-nav-logo {
     font-size: 1.32rem;
     font-weight: 700;
     letter-spacing: -0.01em;
     color: #000;
-    text-decoration: none;
 }
-
-/* Desktop nav links */
-.bm-nav-links { display: flex; align-items: center; gap: 1.75rem; }
-.bm-nav-links a {
-    color: var(--bm-text);
+div[class*="st-key-bm_nav"] .stButton { display: flex; justify-content: flex-end; }
+div[class*="st-key-bm_nav"] .stButton > button {
+    width: auto !important;
+    min-height: auto !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--bm-text) !important;
     font-weight: 500;
     font-size: 0.95rem;
-    text-decoration: none;
+    padding: 0.3rem 0.2rem !important;
 }
-.bm-nav-links a:hover { color: var(--bm-primary); }
+div[class*="st-key-bm_nav"] .stButton > button:hover { color: var(--bm-primary) !important; }
 
-/* Mobile hamburger + dropdown (pure CSS via <details>/<summary>) */
-.bm-nav-burger { display: none; position: relative; }
-.bm-nav-burger summary { list-style: none; cursor: pointer; }
-.bm-nav-burger summary::-webkit-details-marker { display: none; }
-.bm-burger-icon { display: flex; flex-direction: column; gap: 4px; padding: 8px; }
-.bm-burger-icon span { width: 22px; height: 2px; background: var(--bm-text); display: block; }
-.bm-burger-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 6px);
-    min-width: 150px;
-    background: #fff;
-    border: 1px solid var(--bm-border);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
-    padding: 0.35rem;
-    z-index: 60;
+/* ----- Login box: black, square, right-aligned "Sign in" button ----- */
+div[class*="st-key-bm_login_box"] .stFormSubmitButton { display: flex; justify-content: flex-end; }
+div[class*="st-key-bm_login_box"] .stFormSubmitButton > button {
+    width: auto !important;
+    min-height: auto !important;
+    padding: 0.65rem 1.7rem;
+    border-radius: 0 !important;
+    background: #000 !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
 }
-.bm-burger-menu a {
-    display: block;
-    padding: 0.6rem 0.7rem;
-    color: var(--bm-text);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.95rem;
-}
-.bm-burger-menu a:hover { background: var(--bm-primary-50); color: var(--bm-primary); }
-
-@media (max-width: 640px) {
-    .bm-nav-links { display: none; }
-    .bm-nav-burger { display: block; }
-}
+div[class*="st-key-bm_login_box"] .stFormSubmitButton > button:hover { background: #1a1a1a !important; }
 </style>
 """
 
