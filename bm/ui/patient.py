@@ -70,6 +70,17 @@ def _record(patient):
     # instead of stacking a banner above a fresh recorder.
     if st.session_state.pop("note_saved", False):
         st.toast("Note saved.", icon="✅")
+    err = st.session_state.pop("_record_error", None)
+    if err:
+        st.error(err)
+
+    # A queued recording is transcribed on its own run WITHOUT re-rendering the
+    # recorder. Otherwise Streamlit keeps the recorder (and tabs) on screen and
+    # overlays the next run while transcription blocks, so it looks duplicated.
+    pending = st.session_state.pop("_pending_recording", None)
+    if pending is not None:
+        _transcribe_and_save(patient, pending)
+        return
 
     result = recorder.record_button(key="voice_recorder")
     if not result or not result.get("audio"):
@@ -78,7 +89,12 @@ def _record(patient):
     if result.get("id") == st.session_state.get("last_record_id"):
         return
     st.session_state["last_record_id"] = result.get("id")
+    # Hand off to a clean processing run (no recorder) to do the slow work.
+    st.session_state["_pending_recording"] = result
+    st.rerun()
 
+
+def _transcribe_and_save(patient, result):
     audio_bytes = base64.b64decode(result["audio"])
     duration = float(result.get("duration") or 0)
     suffix = _suffix_for(result.get("mime"))
@@ -87,8 +103,8 @@ def _record(patient):
             transcript = ai.transcribe(audio_bytes, suffix=suffix)
             anonymized = ai.anonymize(transcript)
         except (ai.AIServiceError, ai.AIConfigError) as exc:
-            st.error(str(exc))
-            return
+            st.session_state["_record_error"] = str(exc)
+            st.rerun()
     tokens = audio.count_tokens(transcript)
     repository.add_note_with_usage(
         patient_id=patient["id"],

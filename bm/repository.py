@@ -236,7 +236,7 @@ def usage_today(patient_id):
 # Application settings (key/value)
 # ---------------------------------------------------------------------------
 _DAILY_TARGET_KEY = "daily_token_target"
-DEFAULT_DAILY_TOKEN_TARGET = 500
+DEFAULT_DAILY_TOKEN_TARGET = 1000
 
 
 def get_setting(key, default=None):
