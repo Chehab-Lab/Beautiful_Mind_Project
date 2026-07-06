@@ -155,16 +155,7 @@ iframe[title="bm_voice_recorder"] { width: 100%; }
 
 _LANDING_CSS = """
 <style>
-html { scroll-behavior: smooth; }
-
-/* The landing page is a real marketing/article page, so it gets more room
-   than the mobile-first dashboards (which keep the 680px block-container). */
-.block-container:has(.bm-nav) {
-    max-width: 940px !important;
-    padding-top: 0 !important;
-}
-
-/* ----- Nav bar ----- */
+/* ----- Nav bar: plain black wordmark + About link ----- */
 .bm-nav {
     display: flex;
     align-items: center;
@@ -182,7 +173,8 @@ html { scroll-behavior: smooth; }
     font-size: 1.32rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    color: var(--bm-text);
+    color: #000;
+    text-decoration: none;
 }
 
 /* Desktop nav links */
@@ -226,125 +218,6 @@ html { scroll-behavior: smooth; }
     .bm-nav-links { display: none; }
     .bm-nav-burger { display: block; }
 }
-
-/* ----- Hero ----- */
-.bm-eyebrow {
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--bm-primary);
-    margin-bottom: 0.9rem;
-}
-.bm-hero-title {
-    font-size: 2.6rem;
-    line-height: 1.1;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--bm-text);
-    margin: 0 0 1.1rem;
-}
-.bm-hero-sub {
-    font-size: 1.06rem;
-    line-height: 1.65;
-    color: var(--bm-muted);
-    max-width: 46ch;
-}
-@media (max-width: 640px) { .bm-hero-title { font-size: 2rem; } }
-
-/* ----- Login card: a flat black sleek rectangle, square-cornered ----- */
-div[class*="st-key-bm_login_card"] {
-    background: #0a0a0a;
-    border: none;
-    border-radius: 0;
-    padding: 1.6rem 1.5rem;
-    box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-div[class*="st-key-bm_login_card"] input {
-    background: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    border-radius: 0 !important;
-    color: #fff !important;
-}
-div[class*="st-key-bm_login_card"] input::placeholder { color: rgba(255, 255, 255, 0.4); }
-div[class*="st-key-bm_login_card"] input:focus {
-    border-color: #fff !important;
-    box-shadow: 0 0 0 1px #fff !important;
-}
-div[class*="st-key-bm_login_card"] [data-testid="stForm"] { border: none; padding: 0; }
-div[class*="st-key-bm_login_card"] .stFormSubmitButton > button {
-    background: #000;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 0 !important;
-    font-weight: 700;
-    box-shadow: none;
-}
-div[class*="st-key-bm_login_card"] .stFormSubmitButton > button:hover { background: #1a1a1a; }
-div[class*="st-key-bm_login_card"] div[data-testid="stAlert"] {
-    background: rgba(239, 68, 68, 0.15);
-    color: #FCA5A5;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-/* ----- About: Medium-style journalistic article, set in Roboto ----- */
-.bm-about { max-width: 680px; margin: 4rem auto 0; scroll-margin-top: 90px; }
-.bm-kicker {
-    font-style: italic;
-    color: var(--bm-muted);
-    font-size: 0.98rem;
-    margin-bottom: 0.6rem;
-}
-.bm-about-title {
-    font-size: 2.05rem;
-    line-height: 1.28;
-    font-weight: 700;
-    color: var(--bm-text);
-    letter-spacing: -0.01em;
-    margin: 0 0 1.5rem;
-}
-.bm-lede {
-    font-size: 1.2rem;
-    line-height: 1.85;
-    color: #2b2f3a;
-}
-.bm-lede.bm-dropcap:first-letter {
-    float: left;
-    font-size: 3.7em;
-    line-height: 0.78;
-    padding: 0.07em 0.12em 0 0;
-    font-weight: 700;
-    color: var(--bm-text);
-}
-.bm-section h3 {
-    font-size: 1.34rem;
-    font-weight: 700;
-    color: var(--bm-text);
-    margin: 2.3rem 0 0.6rem;
-}
-.bm-section p {
-    font-size: 1.09rem;
-    line-height: 1.8;
-    color: #333743;
-    margin: 0;
-}
-.bm-callout {
-    background: var(--bm-primary-50);
-    border: 1px solid var(--bm-primary-100);
-    border-radius: 16px;
-    padding: 1.6rem 1.7rem;
-    margin: 2.8rem 0;
-}
-.bm-callout h3 { margin-top: 0; }
-.bm-contact { border-top: 1px solid var(--bm-border); margin-top: 2.8rem; padding-top: 1.9rem; }
-.bm-contact a { color: var(--bm-primary); font-weight: 700; text-decoration: none; }
-.bm-legal-heading {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--bm-text);
-    margin: 2.6rem 0 0.9rem;
-}
-div[class*="st-key-bm_legal"] { max-width: 680px; margin: 0 auto; }
 </style>
 """
 

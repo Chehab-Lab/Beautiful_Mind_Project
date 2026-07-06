@@ -111,125 +111,105 @@ def _do_login(username, password):
     st.rerun()
 
 
-def login_view():
-    """Signed-out landing page: nav bar, hero with a login card, and the
-    journalistic About content from beautifulmind.health/info."""
-    theme.inject_landing()
-
+def _nav_bar():
     st.markdown(
         '<div class="bm-nav">'
-        '<div class="bm-nav-logo">Beautiful Mind</div>'
-        '<nav class="bm-nav-links"><a href="#bm-about">About</a></nav>'
+        '<a class="bm-nav-logo" href="?">Beautiful Mind</a>'
+        '<nav class="bm-nav-links"><a href="?page=about">About</a></nav>'
         '<details class="bm-nav-burger">'
         '<summary class="bm-burger-icon"><span></span><span></span><span></span></summary>'
-        '<div class="bm-burger-menu"><a href="#bm-about">About</a></div>'
+        '<div class="bm-burger-menu"><a href="?page=about">About</a></div>'
         "</details>"
         "</div>",
         unsafe_allow_html=True,
     )
 
-    hero_col, login_col = st.columns([1.15, 1], gap="large")
-    with hero_col:
-        st.markdown(
-            '<div class="bm-eyebrow">Chehab Lab &middot; AUB</div>'
-            '<div class="bm-hero-title">Understanding<br>the Inner Voice</div>'
-            '<p class="bm-hero-sub">The Beautiful Mind project is a pioneering research '
-            "initiative at Chehab Lab, American University of Beirut. We collect audio "
-            "journals to unlock insights into mental well-being through advanced, "
-            "privacy-first analysis.</p>",
-            unsafe_allow_html=True,
-        )
-    with login_col:
-        with st.container(key="bm_login_card"):
-            with st.form("login"):
-                username = st.text_input(
-                    "Username", placeholder="Username", label_visibility="collapsed"
-                )
-                password = st.text_input(
-                    "Password",
-                    type="password",
-                    placeholder="Password",
-                    label_visibility="collapsed",
-                )
-                submitted = st.form_submit_button(
-                    "Sign in", type="primary", use_container_width=True
-                )
-            if submitted:
-                _do_login(username, password)
 
-    _about_section()
+def login_view():
+    """Signed-out landing page: nav bar plus a centered login form."""
+    theme.inject_landing()
+    _nav_bar()
+
+    _, mid, _ = st.columns([1, 1.2, 1])
+    with mid:
+        st.subheader("Sign in")
+        with st.form("login"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+        if submitted:
+            _do_login(username, password)
 
 
-def _about_section():
-    st.markdown(
-        '<div class="bm-about" id="bm-about">'
-        '<div class="bm-kicker">About the project</div>'
-        '<h2 class="bm-about-title">A quiet record of the mind, in your own voice.</h2>'
-        '<p class="bm-lede bm-dropcap">The Beautiful Mind project is a pioneering '
-        "research initiative at Chehab Lab, American University of Beirut. We collect "
-        "audio journals to unlock insights into mental well-being through advanced "
-        "analysis — turning the everyday act of speaking your mind into a source of "
-        "scientific understanding.</p>"
-        '<div class="bm-section">'
-        "<h3>Audio Journals</h3>"
-        "<p>Participants share their daily thoughts and emotions through secure, "
-        "private voice recordings.</p>"
-        "<h3>Insightful Analysis</h3>"
-        "<p>We use cutting-edge computational methods to analyze transcribed text "
-        "and sentiment to better understand mental health.</p>"
-        "<h3>Chehab Lab at AUB</h3>"
-        "<p>A flagship research initiative within the American University of Beirut "
-        "(AUB), led by dedicated researchers.</p>"
-        "</div>"
-        '<div class="bm-callout">'
-        "<h3>Your Privacy is Our Priority</h3>"
-        "<p>The Beautiful Mind project is built on trust. All collected data is "
-        "strictly secured and completely anonymized. Your identity is never linked "
-        "to your recordings, ensuring your journey remains private while "
-        "contributing to vital research.</p>"
-        "</div>"
-        '<div class="bm-contact">'
-        '<h3 style="margin-top:0;">Get in Touch</h3>'
-        "<p>Interested in participating or learning more about our research?</p>"
-        '<p style="margin-top:0.6rem;">'
-        '<a href="mailto:amm90@mail.aub.edu">amm90@mail.aub.edu</a><br>'
-        "American University of Beirut<br>"
-        "Chehab Lab Research Initiative</p>"
-        "</div>"
-        "</div>",
-        unsafe_allow_html=True,
+def about_view():
+    """A plain, generic About page describing the research project."""
+    theme.inject_landing()
+    _nav_bar()
+
+    st.title("About the Project")
+    st.write(
+        "The Beautiful Mind project is a pioneering research initiative at Chehab "
+        "Lab, American University of Beirut. We collect audio journals to unlock "
+        "insights into mental well-being through advanced analysis."
     )
 
-    with st.container(key="bm_legal"):
-        st.markdown('<div class="bm-legal-heading">Legal Information</div>', unsafe_allow_html=True)
-        with st.expander("Research Participation"):
-            st.write(
-                "By participating in the Beautiful Mind Project, you contribute to a "
-                "research initiative at AUB's Chehab Lab. Your participation is voluntary "
-                "and focused on advancing mental health analytics."
-            )
-        with st.expander("Data Usage & Security"):
-            st.write(
-                "All data is processed using state-of-the-art anonymization techniques "
-                "to ensure participant privacy and confidentiality. Audio files are "
-                "stored securely using industry-standard protection measures and are "
-                "accessible only to authorized research personnel. Audio processing is "
-                "performed through OpenAI APIs in accordance with applicable data "
-                "protection standards. We do not sell, trade, or share any "
-                "individual-level data with third parties under any circumstances."
-            )
-        with st.expander("Medical Disclaimer"):
-            st.write(
-                "This project is for research purposes only. It does not provide "
-                "medical advice, diagnosis, or treatment. It is not a substitute for "
-                "professional mental health services or emergency intervention."
-            )
-        with st.expander("Terms of Service"):
-            st.write(
-                "Use of this platform constitutes acceptance of our research "
-                "protocols. Users must be 18+ or have parental consent. We reserve the "
-                "right to terminate access if protocols are violated."
-            )
+    st.subheader("Audio Journals")
+    st.write(
+        "Participants share their daily thoughts and emotions through secure, "
+        "private voice recordings."
+    )
+    st.subheader("Insightful Analysis")
+    st.write(
+        "We use cutting-edge computational methods to analyze transcribed text "
+        "and sentiment to better understand mental health."
+    )
+    st.subheader("Chehab Lab at AUB")
+    st.write(
+        "A flagship research initiative within the American University of Beirut "
+        "(AUB), led by dedicated researchers."
+    )
+
+    st.subheader("Your Privacy is Our Priority")
+    st.write(
+        "The Beautiful Mind project is built on trust. All collected data is "
+        "strictly secured and completely anonymized. Your identity is never linked "
+        "to your recordings, ensuring your journey remains private while "
+        "contributing to vital research."
+    )
+
+    st.subheader("Get in Touch")
+    st.write("Interested in participating or learning more about our research?")
+    st.write("amm90@mail.aub.edu  \nAmerican University of Beirut  \nChehab Lab Research Initiative")
+
+    st.subheader("Legal Information")
+    with st.expander("Research Participation"):
+        st.write(
+            "By participating in the Beautiful Mind Project, you contribute to a "
+            "research initiative at AUB's Chehab Lab. Your participation is voluntary "
+            "and focused on advancing mental health analytics."
+        )
+    with st.expander("Data Usage & Security"):
+        st.write(
+            "All data is processed using state-of-the-art anonymization techniques "
+            "to ensure participant privacy and confidentiality. Audio files are "
+            "stored securely using industry-standard protection measures and are "
+            "accessible only to authorized research personnel. Audio processing is "
+            "performed through OpenAI APIs in accordance with applicable data "
+            "protection standards. We do not sell, trade, or share any "
+            "individual-level data with third parties under any circumstances."
+        )
+    with st.expander("Medical Disclaimer"):
+        st.write(
+            "This project is for research purposes only. It does not provide "
+            "medical advice, diagnosis, or treatment. It is not a substitute for "
+            "professional mental health services or emergency intervention."
+        )
+    with st.expander("Terms of Service"):
+        st.write(
+            "Use of this platform constitutes acceptance of our research "
+            "protocols. Users must be 18+ or have parental consent. We reserve the "
+            "right to terminate access if protocols are violated."
+        )
 
 
 def logout():
@@ -251,7 +231,10 @@ def main():
     _restore_or_wait()
     user = st.session_state.get("user")
     if user is None:
-        login_view()
+        if st.query_params.get("page") == "about":
+            about_view()
+        else:
+            login_view()
     else:
         _render_authenticated(user)
     theme.footer()
