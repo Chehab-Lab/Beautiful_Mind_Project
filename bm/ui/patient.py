@@ -2,11 +2,16 @@
 import base64
 import datetime
 import html
+import logging
+import os
+import threading
 
 import streamlit as st
 
-from bm import ai, audio, repository
+from bm import ai, audio, db, repository
 from bm.ui import common, recorder
+
+_log = logging.getLogger(__name__)
 
 # Monochrome grayscale-to-black intensity palette (empty -> at/over target).
 _HEAT_COLORS = ["#EDEEF1", "#CFD2D8", "#9AA0AB", "#565C68", "#0A0A0A"]
@@ -66,66 +71,70 @@ def _record(patient):
         )
         return
 
-    # Transient confirmation after a save — keeps the record tab uncluttered
-    # instead of stacking a banner above a fresh recorder.
-    if st.session_state.pop("note_saved", False):
-        st.toast("Note saved.", icon="✅")
-    err = st.session_state.pop("_record_error", None)
-    if err:
-        st.error(err)
+    # A one-off toast once a recording has been handed to the background worker.
+    if st.session_state.pop("_queued_toast", False):
+        st.toast("Recording received — it will appear under 'My notes' once ready.", icon="🎙️")
 
-    # The recorder and the "transcribing…" status share ONE slot, so the
-    # recorder can never render a second time while transcription blocks
-    # (which is what made the UI look duplicated).
-    slot = st.empty()
+    result = recorder.record_button(key="voice_recorder")
+    st.caption(
+        "Recordings are transcribed in the background and appear under "
+        "**My notes** when ready — you can keep recording or leave this page."
+    )
+    if not result or not result.get("audio"):
+        return
+    # Ignore reruns that replay the same recording.
+    if result.get("id") == st.session_state.get("last_record_id"):
+        return
+    st.session_state["last_record_id"] = result.get("id")
 
-    # A queued recording is kept in session_state until it is actually saved,
-    # so a long one whose run gets interrupted is retried rather than lost.
-    pending = st.session_state.get("_pending_recording")
-    if pending is None:
-        with slot.container():
-            result = recorder.record_button(key="voice_recorder")
-        if not result or not result.get("audio"):
-            return
-        # Ignore reruns that replay the same recording.
-        if result.get("id") == st.session_state.get("last_record_id"):
-            return
-        st.session_state["last_record_id"] = result.get("id")
-        st.session_state["_pending_recording"] = result
-        pending = result
-
-    with slot.container():
-        with st.spinner("Transcribing and anonymizing…"):
-            ok, error = _transcribe_and_save(patient, pending)
-
-    # Only clear the queued recording once processing finished (ok or a real
-    # error). An interrupted run leaves it in place to retry next time.
-    st.session_state.pop("_pending_recording", None)
-    if ok:
-        st.session_state["note_saved"] = True
-    elif error:
-        st.session_state["_record_error"] = error
+    # Transcription + storage run in a background thread so the UI never blocks
+    # (a blocking run is what made the recorder look duplicated). Config and the
+    # DB connection string are resolved here — the worker must not touch st.
+    thread = threading.Thread(
+        target=_process_recording,
+        kwargs={
+            "patient_id": patient["id"],
+            "audio_b64": result["audio"],
+            "mime": result.get("mime"),
+            "duration": float(result.get("duration") or 0),
+            "ai_config": ai.resolve_config(),
+            "dsn": db.get_dsn(),
+        },
+        daemon=True,
+    )
+    thread.start()
+    st.session_state["_queued_toast"] = True
     st.rerun()
 
 
-def _transcribe_and_save(patient, result):
-    """Transcribe, anonymize and store one recording. Returns (ok, error)."""
+def _process_recording(patient_id, audio_b64, mime, duration, ai_config, dsn):
+    """Background worker: transcribe, anonymize and store one recording.
+
+    Runs off the Streamlit script thread, so it must not call any ``st`` APIs.
+    All configuration is passed in; the DB connection string is exported so the
+    worker's fresh thread-local connection can be established without secrets.
+    """
+    if dsn:
+        os.environ.setdefault("DATABASE_URL", dsn)
     try:
-        audio_bytes = base64.b64decode(result["audio"])
-        duration = float(result.get("duration") or 0)
-        suffix = _suffix_for(result.get("mime"))
-        transcript = ai.transcribe(audio_bytes, suffix=suffix)
-        anonymized = ai.anonymize(transcript)
-    except (ai.AIServiceError, ai.AIConfigError) as exc:
-        return False, str(exc)
-    tokens = audio.count_tokens(transcript)
-    repository.add_note_with_usage(
-        patient_id=patient["id"],
-        anonymized_text=anonymized,
-        duration_seconds=duration,
-        transcribed_tokens=tokens,
-    )
-    return True, None
+        audio_bytes = base64.b64decode(audio_b64)
+        suffix = _suffix_for(mime)
+        transcript = ai.transcribe(
+            audio_bytes, suffix=suffix,
+            api_key=ai_config["api_key"], model=ai_config["stt_model"],
+        )
+        anonymized = ai.anonymize(
+            transcript, api_key=ai_config["api_key"], model=ai_config["chat_model"],
+        )
+        tokens = audio.count_tokens(transcript)
+        repository.add_note_with_usage(
+            patient_id=patient_id,
+            anonymized_text=anonymized,
+            duration_seconds=duration,
+            transcribed_tokens=tokens,
+        )
+    except Exception:  # noqa: BLE001 - background job; log and drop
+        _log.exception("Background transcription failed for patient %s", patient_id)
 
 
 def _history(patient):

@@ -42,14 +42,24 @@ def get_api_key():
     return key
 
 
-def _client():
+def _client(api_key=None):
     try:
         from openai import OpenAI
     except ImportError as exc:  # pragma: no cover - dependency guard
         raise AIConfigError("The 'openai' package is not installed.") from exc
     # Long recordings take a while to upload and transcribe — give the API
     # room rather than letting the default timeout abort a long note.
-    return OpenAI(api_key=get_api_key(), timeout=300.0, max_retries=2)
+    return OpenAI(api_key=api_key or get_api_key(), timeout=300.0, max_retries=2)
+
+
+def resolve_config():
+    """Resolve OpenAI config while a script-run context exists, so it can be
+    handed to a background worker thread (which must not touch st.secrets)."""
+    return {
+        "api_key": get_api_key(),
+        "stt_model": _secret("OPENAI_STT_MODEL", "whisper-1"),
+        "chat_model": _secret("OPENAI_CHAT_MODEL", "gpt-4o-mini"),
+    }
 
 
 def is_configured() -> bool:
@@ -60,12 +70,12 @@ def is_configured() -> bool:
         return False
 
 
-def transcribe(audio_bytes: bytes, suffix: str = ".wav") -> str:
+def transcribe(audio_bytes: bytes, suffix: str = ".wav", api_key=None, model=None) -> str:
     """Transcribe raw audio bytes to Arabic text using Whisper."""
     import tempfile
 
-    model = _secret("OPENAI_STT_MODEL", "whisper-1")
-    client = _client()
+    model = model or _secret("OPENAI_STT_MODEL", "whisper-1")
+    client = _client(api_key)
     tmp_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -83,10 +93,10 @@ def transcribe(audio_bytes: bytes, suffix: str = ".wav") -> str:
             os.remove(tmp_path)
 
 
-def anonymize(text: str) -> str:
+def anonymize(text: str, api_key=None, model=None) -> str:
     """Replace names of people/places with hashed placeholders (GPT-assisted)."""
-    model = _secret("OPENAI_CHAT_MODEL", "gpt-4o-mini")
-    client = _client()
+    model = model or _secret("OPENAI_CHAT_MODEL", "gpt-4o-mini")
+    client = _client(api_key)
     prompt = (
         "You are a helpful assistant that identifies names of people and places "
         "in text for anonymization. Identify all names of people and places in "

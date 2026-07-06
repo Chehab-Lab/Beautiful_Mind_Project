@@ -90,6 +90,12 @@ def _dsn() -> str | None:
     return dsn or os.getenv("DATABASE_URL")
 
 
+def get_dsn() -> str | None:
+    """Public accessor for the connection string, resolved in the caller's
+    context. Handy for handing the DSN to a background worker thread."""
+    return _dsn()
+
+
 def _reset_conn() -> None:
     conn = getattr(_local, "conn", None)
     if conn is not None:
