@@ -42,7 +42,7 @@ def render(user):
         st.error("No patient profile is linked to this account.")
         return
 
-    st.subheader(patient["alias"] or "My records")
+    st.subheader("My records")
     st.caption("Your voice notes are transcribed and anonymized before they are stored.")
 
     tab_record, tab_history, tab_usage, tab_account = st.tabs(
