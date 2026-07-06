@@ -22,7 +22,7 @@ from bm.ui import doctor as doctor_ui  # noqa: E402
 from bm.ui import patient as patient_ui  # noqa: E402
 from bm.ui import theme  # noqa: E402
 
-st.set_page_config(page_title="BeautifulMind", page_icon="🧠", layout="centered")
+st.set_page_config(page_title="Beautiful Mind", layout="centered")
 
 theme.inject()
 db.init_db()
@@ -55,19 +55,20 @@ def _boot_splash():
     st.markdown(
         """
 <style>
-@keyframes bmPulse {
-    0%, 100% { transform: scale(0.82); opacity: 0.65; }
-    50%      { transform: scale(1.25); opacity: 1; }
-}
+@keyframes bmSpin { to { transform: rotate(360deg); } }
 .bm-splash {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     min-height: 60vh; gap: 16px;
 }
-.bm-splash .emoji { font-size: 66px; animation: bmPulse 1.1s ease-in-out infinite; }
+.bm-splash .ring {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid #E6E8F1; border-top-color: #4F46E5;
+    animation: bmSpin 0.8s linear infinite;
+}
 .bm-splash .cap { color: #5a6072; font-size: 1.05rem; letter-spacing: 0.03em; }
 </style>
 <div class="bm-splash">
-    <div class="emoji">🧠</div>
+    <div class="ring"></div>
     <div class="cap">loading …</div>
 </div>
 """,
@@ -117,8 +118,12 @@ def login_view():
 
     st.markdown(
         '<div class="bm-nav">'
-        '<div class="bm-nav-logo">Beautiful <span>Mind</span></div>'
-        '<div class="bm-nav-tag">Chehab Lab &middot; American University of Beirut</div>'
+        '<div class="bm-nav-logo">Beautiful Mind</div>'
+        '<nav class="bm-nav-links"><a href="#bm-about">About</a></nav>'
+        '<details class="bm-nav-burger">'
+        '<summary class="bm-burger-icon"><span></span><span></span><span></span></summary>'
+        '<div class="bm-burger-menu"><a href="#bm-about">About</a></div>'
+        "</details>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -136,16 +141,15 @@ def login_view():
         )
     with login_col:
         with st.container(key="bm_login_card"):
-            st.markdown(
-                '<div class="bm-login-eyebrow">Participants &amp; staff</div>'
-                '<div class="bm-login-title">Sign in</div>'
-                '<div class="bm-login-sub">Enter your credentials to continue.</div>',
-                unsafe_allow_html=True,
-            )
             with st.form("login"):
-                username = st.text_input("Username", placeholder="Your username")
+                username = st.text_input(
+                    "Username", placeholder="Username", label_visibility="collapsed"
+                )
                 password = st.text_input(
-                    "Password", type="password", placeholder="••••••••"
+                    "Password",
+                    type="password",
+                    placeholder="Password",
+                    label_visibility="collapsed",
                 )
                 submitted = st.form_submit_button(
                     "Sign in", type="primary", use_container_width=True
@@ -158,7 +162,7 @@ def login_view():
 
 def _about_section():
     st.markdown(
-        '<div class="bm-about">'
+        '<div class="bm-about" id="bm-about">'
         '<div class="bm-kicker">About the project</div>'
         '<h2 class="bm-about-title">A quiet record of the mind, in your own voice.</h2>'
         '<p class="bm-lede bm-dropcap">The Beautiful Mind project is a pioneering '
@@ -185,7 +189,7 @@ def _about_section():
         "contributing to vital research.</p>"
         "</div>"
         '<div class="bm-contact">'
-        '<h3 style="font-family:Georgia,serif;margin-top:0;">Get in Touch</h3>'
+        '<h3 style="margin-top:0;">Get in Touch</h3>'
         "<p>Interested in participating or learning more about our research?</p>"
         '<p style="margin-top:0.6rem;">'
         '<a href="mailto:amm90@mail.aub.edu">amm90@mail.aub.edu</a><br>'
