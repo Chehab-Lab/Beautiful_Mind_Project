@@ -111,18 +111,28 @@ def _do_login(username, password):
     st.rerun()
 
 
+def _go_to(page):
+    st.session_state["_page"] = page
+    st.rerun()
+
+
 def _nav_bar():
-    st.markdown(
-        '<div class="bm-nav">'
-        '<a class="bm-nav-logo" href="?">Beautiful Mind</a>'
-        '<nav class="bm-nav-links"><a href="?page=about">About</a></nav>'
-        '<details class="bm-nav-burger">'
-        '<summary class="bm-burger-icon"><span></span><span></span><span></span></summary>'
-        '<div class="bm-burger-menu"><a href="?page=about">About</a></div>'
-        "</details>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    """Nav bar with a plain (non-link) wordmark and an About/Home toggle.
+
+    The toggle is a real Streamlit button so switching pages reruns the app
+    in place — no full page navigation, no new tab.
+    """
+    with st.container(key="bm_nav"):
+        left, right = st.columns([3, 1])
+        with left:
+            st.markdown('<div class="bm-nav-logo">Beautiful Mind</div>', unsafe_allow_html=True)
+        with right:
+            if st.session_state.get("_page") == "about":
+                if st.button("Home", key="nav_home"):
+                    _go_to("login")
+            else:
+                if st.button("About", key="nav_about"):
+                    _go_to("about")
 
 
 def login_view():
@@ -132,13 +142,14 @@ def login_view():
 
     _, mid, _ = st.columns([1, 1.2, 1])
     with mid:
-        st.subheader("Sign in")
-        with st.form("login"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
-        if submitted:
-            _do_login(username, password)
+        with st.container(key="bm_login_box"):
+            st.subheader("Sign in")
+            with st.form("login"):
+                username = st.text_input("Username")
+                password = st.text_input("Password", type="password")
+                submitted = st.form_submit_button("Sign in", type="primary")
+            if submitted:
+                _do_login(username, password)
 
 
 def about_view():
@@ -231,7 +242,7 @@ def main():
     _restore_or_wait()
     user = st.session_state.get("user")
     if user is None:
-        if st.query_params.get("page") == "about":
+        if st.session_state.get("_page") == "about":
             about_view()
         else:
             login_view()
