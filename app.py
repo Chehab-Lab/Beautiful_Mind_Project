@@ -97,24 +97,135 @@ def _restore_or_wait():
         st.stop()
 
 
+def _do_login(username, password):
+    user = auth.authenticate(username, password)
+    if user is None:
+        st.error("Invalid username or password.")
+        return
+    token = repository.create_session(user["id"], days=REMEMBER_DAYS)
+    st.session_state["user"] = user
+    st.session_state["_auth_token"] = token
+    # Deferred to the next run so the cookie write isn't cut off by rerun.
+    st.session_state["_pending_cookie"] = token
+    st.rerun()
+
+
 def login_view():
-    st.title("🧠 BeautifulMind")
-    st.caption("Sign in to continue")
-    with st.form("login"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Sign in", type="primary")
-    if submitted:
-        user = auth.authenticate(username, password)
-        if user is None:
-            st.error("Invalid username or password.")
-        else:
-            token = repository.create_session(user["id"], days=REMEMBER_DAYS)
-            st.session_state["user"] = user
-            st.session_state["_auth_token"] = token
-            # Deferred to the next run so the cookie write isn't cut off by rerun.
-            st.session_state["_pending_cookie"] = token
-            st.rerun()
+    """Signed-out landing page: nav bar, hero with a login card, and the
+    journalistic About content from beautifulmind.health/info."""
+    theme.inject_landing()
+
+    st.markdown(
+        '<div class="bm-nav">'
+        '<div class="bm-nav-logo">Beautiful <span>Mind</span></div>'
+        '<div class="bm-nav-tag">Chehab Lab &middot; American University of Beirut</div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    hero_col, login_col = st.columns([1.15, 1], gap="large")
+    with hero_col:
+        st.markdown(
+            '<div class="bm-eyebrow">Chehab Lab &middot; AUB</div>'
+            '<div class="bm-hero-title">Understanding<br>the Inner Voice</div>'
+            '<p class="bm-hero-sub">The Beautiful Mind project is a pioneering research '
+            "initiative at Chehab Lab, American University of Beirut. We collect audio "
+            "journals to unlock insights into mental well-being through advanced, "
+            "privacy-first analysis.</p>",
+            unsafe_allow_html=True,
+        )
+    with login_col:
+        with st.container(key="bm_login_card"):
+            st.markdown(
+                '<div class="bm-login-eyebrow">Participants &amp; staff</div>'
+                '<div class="bm-login-title">Sign in</div>'
+                '<div class="bm-login-sub">Enter your credentials to continue.</div>',
+                unsafe_allow_html=True,
+            )
+            with st.form("login"):
+                username = st.text_input("Username", placeholder="Your username")
+                password = st.text_input(
+                    "Password", type="password", placeholder="••••••••"
+                )
+                submitted = st.form_submit_button(
+                    "Sign in", type="primary", use_container_width=True
+                )
+            if submitted:
+                _do_login(username, password)
+
+    _about_section()
+
+
+def _about_section():
+    st.markdown(
+        '<div class="bm-about">'
+        '<div class="bm-kicker">About the project</div>'
+        '<h2 class="bm-about-title">A quiet record of the mind, in your own voice.</h2>'
+        '<p class="bm-lede bm-dropcap">The Beautiful Mind project is a pioneering '
+        "research initiative at Chehab Lab, American University of Beirut. We collect "
+        "audio journals to unlock insights into mental well-being through advanced "
+        "analysis — turning the everyday act of speaking your mind into a source of "
+        "scientific understanding.</p>"
+        '<div class="bm-section">'
+        "<h3>Audio Journals</h3>"
+        "<p>Participants share their daily thoughts and emotions through secure, "
+        "private voice recordings.</p>"
+        "<h3>Insightful Analysis</h3>"
+        "<p>We use cutting-edge computational methods to analyze transcribed text "
+        "and sentiment to better understand mental health.</p>"
+        "<h3>Chehab Lab at AUB</h3>"
+        "<p>A flagship research initiative within the American University of Beirut "
+        "(AUB), led by dedicated researchers.</p>"
+        "</div>"
+        '<div class="bm-callout">'
+        "<h3>Your Privacy is Our Priority</h3>"
+        "<p>The Beautiful Mind project is built on trust. All collected data is "
+        "strictly secured and completely anonymized. Your identity is never linked "
+        "to your recordings, ensuring your journey remains private while "
+        "contributing to vital research.</p>"
+        "</div>"
+        '<div class="bm-contact">'
+        '<h3 style="font-family:Georgia,serif;margin-top:0;">Get in Touch</h3>'
+        "<p>Interested in participating or learning more about our research?</p>"
+        '<p style="margin-top:0.6rem;">'
+        '<a href="mailto:amm90@mail.aub.edu">amm90@mail.aub.edu</a><br>'
+        "American University of Beirut<br>"
+        "Chehab Lab Research Initiative</p>"
+        "</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    with st.container(key="bm_legal"):
+        st.markdown('<div class="bm-legal-heading">Legal Information</div>', unsafe_allow_html=True)
+        with st.expander("Research Participation"):
+            st.write(
+                "By participating in the Beautiful Mind Project, you contribute to a "
+                "research initiative at AUB's Chehab Lab. Your participation is voluntary "
+                "and focused on advancing mental health analytics."
+            )
+        with st.expander("Data Usage & Security"):
+            st.write(
+                "All data is processed using state-of-the-art anonymization techniques "
+                "to ensure participant privacy and confidentiality. Audio files are "
+                "stored securely using industry-standard protection measures and are "
+                "accessible only to authorized research personnel. Audio processing is "
+                "performed through OpenAI APIs in accordance with applicable data "
+                "protection standards. We do not sell, trade, or share any "
+                "individual-level data with third parties under any circumstances."
+            )
+        with st.expander("Medical Disclaimer"):
+            st.write(
+                "This project is for research purposes only. It does not provide "
+                "medical advice, diagnosis, or treatment. It is not a substitute for "
+                "professional mental health services or emergency intervention."
+            )
+        with st.expander("Terms of Service"):
+            st.write(
+                "Use of this platform constitutes acceptance of our research "
+                "protocols. Users must be 18+ or have parental consent. We reserve the "
+                "right to terminate access if protocols are violated."
+            )
 
 
 def logout():

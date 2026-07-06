@@ -26,13 +26,17 @@ _CSS = """
     --bm-primary-700: #4338CA;
     --bm-primary-50: #EEF2FF;
     --bm-primary-100: #E0E7FF;
-    --bm-bg: #F5F6FB;
+    --bm-bg: #FFFFFF;
     --bm-surface: #FFFFFF;
     --bm-text: #1F2333;
     --bm-muted: #6B7280;
     --bm-border: #E6E8F1;
     --bm-danger: #EF4444;
+    --bm-ink: #0B0B10;
 }
+
+html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+[data-testid="stAppViewContainer"], [data-testid="stHeader"] { background: var(--bm-bg); }
 
 /* ----- Layout: tight, phone-width ----- */
 .block-container {
@@ -140,9 +144,192 @@ iframe[title="bm_voice_recorder"] { width: 100%; }
 """
 
 
+_LANDING_CSS = """
+<style>
+/* The landing page is a real marketing/article page, so it gets more room
+   than the mobile-first dashboards (which keep the 680px block-container). */
+.block-container:has(.bm-nav) {
+    max-width: 940px !important;
+    padding-top: 0 !important;
+}
+
+/* ----- Nav bar ----- */
+.bm-nav {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.15rem 0.1rem;
+    margin-bottom: 2.4rem;
+    border-bottom: 1px solid var(--bm-border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bm-surface);
+}
+.bm-nav-logo {
+    font-size: 1.32rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--bm-text);
+}
+.bm-nav-logo span { color: var(--bm-primary); }
+.bm-nav-tag {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--bm-muted);
+    white-space: nowrap;
+}
+@media (max-width: 640px) { .bm-nav-tag { display: none; } }
+
+/* ----- Hero ----- */
+.bm-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--bm-primary);
+    margin-bottom: 0.9rem;
+}
+.bm-hero-title {
+    font-size: 2.6rem;
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--bm-text);
+    margin: 0 0 1.1rem;
+}
+.bm-hero-sub {
+    font-size: 1.06rem;
+    line-height: 1.65;
+    color: var(--bm-muted);
+    max-width: 46ch;
+}
+@media (max-width: 640px) { .bm-hero-title { font-size: 2rem; } }
+
+/* ----- Login card: black, sleek, sits at the top of the page ----- */
+div[class*="st-key-bm_login_card"] {
+    background: linear-gradient(165deg, #17171f, #0a0a0e);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 1.9rem 1.7rem 1.6rem;
+    box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+.bm-login-eyebrow {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+.bm-login-title { color: #fff; font-size: 1.4rem; font-weight: 800; margin: 0 0 0.2rem; }
+.bm-login-sub { color: rgba(255, 255, 255, 0.5); font-size: 0.88rem; margin-bottom: 1.2rem; }
+div[class*="st-key-bm_login_card"] [data-testid="stWidgetLabel"] p {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-weight: 600;
+}
+div[class*="st-key-bm_login_card"] input {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    color: #fff !important;
+}
+div[class*="st-key-bm_login_card"] input::placeholder { color: rgba(255, 255, 255, 0.32); }
+div[class*="st-key-bm_login_card"] input:focus {
+    border-color: #818CF8 !important;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.28) !important;
+}
+div[class*="st-key-bm_login_card"] [data-testid="stForm"] { border: none; padding: 0; }
+div[class*="st-key-bm_login_card"] .stFormSubmitButton > button {
+    background: #fff;
+    color: var(--bm-ink);
+    border: none;
+    font-weight: 700;
+    box-shadow: none;
+}
+div[class*="st-key-bm_login_card"] .stFormSubmitButton > button:hover { background: #EEF0FF; }
+div[class*="st-key-bm_login_card"] div[data-testid="stAlert"] {
+    background: rgba(239, 68, 68, 0.15);
+    color: #FCA5A5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ----- About: Medium-style journalistic article ----- */
+.bm-about { max-width: 680px; margin: 4rem auto 0; }
+.bm-kicker {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    color: var(--bm-muted);
+    font-size: 0.98rem;
+    margin-bottom: 0.6rem;
+}
+.bm-about-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2.05rem;
+    line-height: 1.28;
+    font-weight: 700;
+    color: var(--bm-text);
+    letter-spacing: -0.01em;
+    margin: 0 0 1.5rem;
+}
+.bm-lede {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.2rem;
+    line-height: 1.85;
+    color: #2b2f3a;
+}
+.bm-lede.bm-dropcap:first-letter {
+    float: left;
+    font-size: 3.7em;
+    line-height: 0.78;
+    padding: 0.07em 0.12em 0 0;
+    font-weight: 700;
+    color: var(--bm-text);
+}
+.bm-section h3 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.34rem;
+    font-weight: 700;
+    color: var(--bm-text);
+    margin: 2.3rem 0 0.6rem;
+}
+.bm-section p {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.09rem;
+    line-height: 1.8;
+    color: #333743;
+    margin: 0;
+}
+.bm-callout {
+    background: var(--bm-primary-50);
+    border: 1px solid var(--bm-primary-100);
+    border-radius: 16px;
+    padding: 1.6rem 1.7rem;
+    margin: 2.8rem 0;
+}
+.bm-callout h3 { margin-top: 0; }
+.bm-contact { border-top: 1px solid var(--bm-border); margin-top: 2.8rem; padding-top: 1.9rem; }
+.bm-contact a { color: var(--bm-primary); font-weight: 700; text-decoration: none; }
+.bm-legal-heading {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--bm-text);
+    margin: 2.6rem 0 0.9rem;
+}
+div[class*="st-key-bm_legal"] { max-width: 680px; margin: 0 auto; }
+</style>
+"""
+
+
 def inject() -> None:
     """Inject the global mobile-first stylesheet. Call once per run."""
     st.markdown(_CSS, unsafe_allow_html=True)
+
+
+def inject_landing() -> None:
+    """Inject the extra stylesheet used only by the signed-out landing page."""
+    st.markdown(_LANDING_CSS, unsafe_allow_html=True)
 
 
 def footer() -> None:
