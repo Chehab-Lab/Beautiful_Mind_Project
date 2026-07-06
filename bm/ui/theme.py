@@ -187,19 +187,67 @@ div[class*="st-key-bm_nav"] .stButton > button {
 }
 div[class*="st-key-bm_nav"] .stButton > button:hover { color: var(--bm-primary) !important; }
 
-/* ----- Login box: black, square, right-aligned "Sign in" button ----- */
-div[class*="st-key-bm_login_box"] .stFormSubmitButton { display: flex; justify-content: flex-end; }
+/* ----- Login card: a clean bordered surface with a heading, square
+   inputs, and a black square right-aligned "Sign in" button ----- */
+div[class*="st-key-bm_login_box"] {
+    margin-top: 3.4rem;
+    padding: 2.3rem 2.1rem 2rem;
+    background: var(--bm-surface);
+    border: 1px solid var(--bm-border);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px -20px rgba(20, 25, 60, 0.22), 0 2px 6px rgba(20, 25, 60, 0.04);
+}
+.bm-login-head { margin-bottom: 1.5rem; }
+.bm-login-title {
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--bm-text);
+    line-height: 1.15;
+}
+.bm-login-sub {
+    margin-top: 0.35rem;
+    font-size: 0.95rem;
+    color: var(--bm-muted);
+}
+
+/* The card is the only visible boundary — drop the form's own border. */
+div[class*="st-key-bm_login_box"] [data-testid="stForm"] {
+    border: none;
+    padding: 0;
+}
+div[class*="st-key-bm_login_box"] [data-testid="stWidgetLabel"] p {
+    font-weight: 600;
+    color: var(--bm-text);
+}
+
+/* Square inputs to sit cohesively with the square button. */
+div[class*="st-key-bm_login_box"] .stTextInput input { border-radius: 0 !important; }
+div[class*="st-key-bm_login_box"] .stTextInput input:focus {
+    border-color: #000 !important;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12) !important;
+}
+
+div[class*="st-key-bm_login_box"] .stFormSubmitButton {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
 div[class*="st-key-bm_login_box"] .stFormSubmitButton > button {
     width: auto !important;
     min-height: auto !important;
-    padding: 0.65rem 1.7rem;
+    padding: 0.62rem 2rem;
     border-radius: 0 !important;
     background: #000 !important;
     color: #fff !important;
     border: none !important;
     box-shadow: none !important;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background 0.15s ease, transform 0.05s ease;
 }
 div[class*="st-key-bm_login_box"] .stFormSubmitButton > button:hover { background: #1a1a1a !important; }
+div[class*="st-key-bm_login_box"] .stFormSubmitButton > button:active { transform: translateY(1px); }
 </style>
 """
 
