@@ -175,6 +175,21 @@ def _add_patient_form(doctor_options):
 # Usage statistics
 # ---------------------------------------------------------------------------
 def _stats():
+    st.markdown("#### Daily token target")
+    st.caption(
+        "A reference target for tokens a patient consumes per day. Patients may "
+        "exceed it — it is only shown for guidance on their Usage tab."
+    )
+    current = repository.get_daily_token_target()
+    col, _ = st.columns([1, 1])
+    target = col.number_input(
+        "Tokens per day", min_value=0, value=current, step=50, key="daily_target_input"
+    )
+    if st.button("Save target", key="save_daily_target"):
+        repository.set_daily_token_target(int(target))
+        st.success(f"Daily token target set to {int(target):,}.")
+    st.divider()
+
     totals = repository.usage_totals()
     st.markdown("#### Aggregated usage")
     c1, c2, c3 = st.columns(3)

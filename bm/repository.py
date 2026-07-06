@@ -220,6 +220,52 @@ def usage_tokens_by_day(patient_id):
     return {r["day"]: int(r["tokens"]) for r in rows}
 
 
+def usage_today(patient_id):
+    """Return {'notes', 'tokens'} recorded by a patient today."""
+    row = db.query(
+        "SELECT COUNT(*) AS notes, "
+        "COALESCE(SUM(transcribed_tokens), 0) AS tokens "
+        "FROM usage_events WHERE patient_id = %s AND created_at::date = CURRENT_DATE",
+        (patient_id,),
+        fetch="one",
+    )
+    return {"notes": int(row["notes"]), "tokens": int(row["tokens"])}
+
+
+# ---------------------------------------------------------------------------
+# Application settings (key/value)
+# ---------------------------------------------------------------------------
+_DAILY_TARGET_KEY = "daily_token_target"
+DEFAULT_DAILY_TOKEN_TARGET = 500
+
+
+def get_setting(key, default=None):
+    row = db.query("SELECT value FROM app_settings WHERE key = %s", (key,), fetch="one")
+    return row["value"] if row else default
+
+
+def set_setting(key, value):
+    db.query(
+        "INSERT INTO app_settings (key, value) VALUES (%s, %s) "
+        "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        (key, str(value)),
+        commit=True,
+    )
+
+
+def get_daily_token_target():
+    """The admin-set reference target for daily tokens per patient (default 500)."""
+    value = get_setting(_DAILY_TARGET_KEY)
+    try:
+        return int(value) if value is not None else DEFAULT_DAILY_TOKEN_TARGET
+    except (TypeError, ValueError):
+        return DEFAULT_DAILY_TOKEN_TARGET
+
+
+def set_daily_token_target(tokens):
+    set_setting(_DAILY_TARGET_KEY, int(tokens))
+
+
 # ---------------------------------------------------------------------------
 # Usage statistics
 # ---------------------------------------------------------------------------

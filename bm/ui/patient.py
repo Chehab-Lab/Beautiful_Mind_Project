@@ -4,14 +4,13 @@ import datetime
 import html
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 from bm import ai, audio, repository
 from bm.ui import common, recorder
 
-# Monochrome grayscale-to-black contribution palette (empty -> most).
+# Monochrome grayscale-to-black intensity palette (empty -> at/over target).
 _HEAT_COLORS = ["#EDEEF1", "#CFD2D8", "#9AA0AB", "#565C68", "#0A0A0A"]
-_HEAT_WEEKS = 26
+_USAGE_DAYS = 14  # show the last two weeks
 
 _MIME_SUFFIX = {
     "audio/webm": ".webm",
@@ -67,10 +66,10 @@ def _record(patient):
         )
         return
 
-    # Show a one-off confirmation after a note was just saved.
+    # Transient confirmation after a save — keeps the record tab uncluttered
+    # instead of stacking a banner above a fresh recorder.
     if st.session_state.pop("note_saved", False):
-        st.success("Your note was saved. You can record another one, or find it "
-                   "under 'My notes'.")
+        st.toast("Note saved.", icon="✅")
 
     result = recorder.record_button(key="voice_recorder")
     if not result or not result.get("audio"):
@@ -118,85 +117,73 @@ def _history(patient):
         st.divider()
 
 
-def _heat_level(value, max_value):
-    if value <= 0 or max_value <= 0:
-        return 0
-    ratio = value / max_value
+def _heat_color(value, target):
+    """Intensity color for a day's tokens relative to the reference target."""
+    if value <= 0:
+        return _HEAT_COLORS[0]
+    if target <= 0:
+        return _HEAT_COLORS[4]
+    ratio = value / target
     if ratio < 0.25:
-        return 1
+        return _HEAT_COLORS[1]
     if ratio < 0.5:
-        return 2
-    if ratio < 0.75:
-        return 3
-    return 4
+        return _HEAT_COLORS[2]
+    if ratio < 1.0:
+        return _HEAT_COLORS[3]
+    return _HEAT_COLORS[4]
 
 
 def _usage(patient):
     st.markdown("#### Usage")
     by_day = repository.usage_tokens_by_day(patient["id"])
-    total = sum(by_day.values())
-    st.metric("Total transcribed tokens", f"{total:,}")
-
     today = datetime.date.today()
-    # Start on the Sunday that begins the window of the last _HEAT_WEEKS weeks.
-    start = today - datetime.timedelta(days=_HEAT_WEEKS * 7 - 1)
-    start -= datetime.timedelta(days=(start.weekday() + 1) % 7)
-    max_tokens = max(by_day.values(), default=0)
-    num_weeks = (today - start).days // 7 + 1
+    target = repository.get_daily_token_target()
+    today_stats = repository.usage_today(patient["id"])
 
-    columns = []
-    for week in range(num_weeks):
-        cells = []
-        for weekday in range(7):
-            day = start + datetime.timedelta(days=week * 7 + weekday)
-            if day > today:
-                cells.append('<div class="c e"></div>')
-                continue
-            value = by_day.get(day, 0)
-            color = _HEAT_COLORS[_heat_level(value, max_tokens)]
-            cells.append(
-                f'<div class="c" style="background:{color}" '
-                f'data-d="{day.isoformat()}" data-t="{value}"></div>'
-            )
-        columns.append(f'<div class="col">{"".join(cells)}</div>')
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Notes today", today_stats["notes"])
+    c2.metric("Tokens today", f"{today_stats['tokens']:,}")
+    c3.metric("Daily target", f"{target:,}")
 
-    legend = "".join(f'<span class="c" style="background:{c}"></span>' for c in _HEAT_COLORS)
-    grid = "".join(columns)
-    # Rendered in a component iframe so tapping a day works on mobile (no hover).
-    doc = f"""<!doctype html><html><head><meta charset="utf-8"><style>
-* {{ box-sizing: border-box; }}
-body {{ margin: 0; background: transparent; color: #1F2333;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }}
-.wrap {{ overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 2px 0; }}
-.grid {{ display: flex; gap: 3px; min-width: max-content; }}
-.col {{ display: flex; flex-direction: column; gap: 3px; }}
-.c {{ width: 15px; height: 15px; border-radius: 3px; background: #E9EAF2; }}
-.c.e {{ background: transparent; }}
-.grid .c {{ cursor: pointer; }}
-.grid .c.sel {{ outline: 2px solid #1F2333; outline-offset: 1px; }}
-.readout {{ margin-top: 12px; font-size: 0.92rem; color: #374151; min-height: 1.2em; }}
-.readout b {{ color: #1F2333; }}
-.legend {{ display: flex; align-items: center; gap: 5px; margin-top: 10px;
-    font-size: 0.78rem; color: #6B7280; }}
-.legend .c {{ width: 13px; height: 13px; }}
-</style></head><body>
-<div class="wrap"><div class="grid" id="g">{grid}</div></div>
-<div class="readout" id="r">Tap a day to see its tokens.</div>
-<div class="legend">Less {legend} More</div>
-<script>
-var g = document.getElementById('g'), r = document.getElementById('r'), sel = null;
-g.addEventListener('click', function (e) {{
-  var c = e.target.closest('.c');
-  if (!c || !c.dataset.d) return;
-  if (sel) sel.classList.remove('sel');
-  c.classList.add('sel'); sel = c;
-  var t = parseInt(c.dataset.t || '0', 10);
-  r.innerHTML = '<b>' + t.toLocaleString() + '</b> token' + (t === 1 ? '' : 's') + ' on ' + c.dataset.d;
-}});
-</script></body></html>"""
-    components.html(doc, height=215)
-    st.caption(f"Total transcribed tokens per day over the last {_HEAT_WEEKS} weeks. "
-               "Tap a square to see its count.")
+    if target > 0:
+        pct = min(today_stats["tokens"] / target, 1.0)
+        st.progress(
+            pct,
+            text=f"{today_stats['tokens']:,} / {target:,} tokens today · reference only",
+        )
+
+    # Vertical two-week activity: one row per day, most recent first. Each bar
+    # is filled relative to the daily target, coloured by intensity.
+    rows = []
+    for offset in range(_USAGE_DAYS):
+        day = today - datetime.timedelta(days=offset)
+        value = by_day.get(day, 0)
+        width = 0 if target <= 0 else min(value / target, 1.0) * 100
+        over = target > 0 and value > target
+        rows.append(
+            '<div class="bm-u-row">'
+            f'<div class="bm-u-day">{day.strftime("%a %d %b")}</div>'
+            '<div class="bm-u-track">'
+            f'<div class="bm-u-fill" style="width:{width:.0f}%;'
+            f'background:{_heat_color(value, target)}"></div></div>'
+            f'<div class="bm-u-val">{value:,}{" &#9873;" if over else ""}</div>'
+            "</div>"
+        )
+    st.markdown(
+        "<style>"
+        ".bm-u-row{display:flex;align-items:center;gap:.6rem;padding:.16rem 0;}"
+        ".bm-u-day{flex:0 0 84px;font-size:.8rem;color:#6B7280;}"
+        ".bm-u-track{flex:1;height:14px;background:#F1F2F5;border-radius:3px;overflow:hidden;}"
+        ".bm-u-fill{height:100%;border-radius:3px;}"
+        ".bm-u-val{flex:0 0 62px;text-align:right;font-size:.8rem;font-weight:600;color:#1F2333;}"
+        "</style>"
+        '<div class="bm-u">' + "".join(rows) + "</div>",
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        f"Daily tokens over the last {_USAGE_DAYS} days. Bars are relative to the "
+        f"{target:,}-token daily target (&#9873; marks days above it)."
+    )
 
 
 def _account(user):
