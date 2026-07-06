@@ -274,6 +274,9 @@ div[class*="st-key-bm_login_box"] [data-testid="stWidgetLabel"] p {
     color: var(--bm-text);
 }
 
+/* Hide Streamlit's "Press Enter to submit form" helper text. */
+div[class*="st-key-bm_login_box"] [data-testid="InputInstructions"] { display: none !important; }
+
 /* Square inputs to sit cohesively with the square button. */
 div[class*="st-key-bm_login_box"] .stTextInput input { border-radius: 0 !important; }
 div[class*="st-key-bm_login_box"] .stTextInput input:focus {
