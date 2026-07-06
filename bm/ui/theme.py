@@ -21,6 +21,8 @@ _LOGO_URI = _logo_data_uri()
 
 _CSS = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap');
+
 :root {
     --bm-primary: #4F46E5;      /* indigo 600 — the single brand hue */
     --bm-primary-700: #4338CA;
@@ -33,10 +35,17 @@ _CSS = """
     --bm-border: #E6E8F1;
     --bm-danger: #EF4444;
     --bm-ink: #0B0B10;
+    --bm-font: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 
 html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 [data-testid="stAppViewContainer"], [data-testid="stHeader"] { background: var(--bm-bg); }
+html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"],
+[data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"],
+.stTextInput input, .stNumberInput input, .stTextArea textarea,
+.stButton button, .stFormSubmitButton button, .stDownloadButton button {
+    font-family: var(--bm-font);
+}
 
 /* ----- Layout: tight, phone-width ----- */
 .block-container {
@@ -146,6 +155,8 @@ iframe[title="bm_voice_recorder"] { width: 100%; }
 
 _LANDING_CSS = """
 <style>
+html { scroll-behavior: smooth; }
+
 /* The landing page is a real marketing/article page, so it gets more room
    than the mobile-first dashboards (which keep the 680px block-container). */
 .block-container:has(.bm-nav) {
@@ -156,7 +167,7 @@ _LANDING_CSS = """
 /* ----- Nav bar ----- */
 .bm-nav {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
     padding: 1.15rem 0.1rem;
@@ -169,18 +180,52 @@ _LANDING_CSS = """
 }
 .bm-nav-logo {
     font-size: 1.32rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--bm-text);
 }
-.bm-nav-logo span { color: var(--bm-primary); }
-.bm-nav-tag {
-    font-size: 0.82rem;
+
+/* Desktop nav links */
+.bm-nav-links { display: flex; align-items: center; gap: 1.75rem; }
+.bm-nav-links a {
+    color: var(--bm-text);
     font-weight: 500;
-    color: var(--bm-muted);
-    white-space: nowrap;
+    font-size: 0.95rem;
+    text-decoration: none;
 }
-@media (max-width: 640px) { .bm-nav-tag { display: none; } }
+.bm-nav-links a:hover { color: var(--bm-primary); }
+
+/* Mobile hamburger + dropdown (pure CSS via <details>/<summary>) */
+.bm-nav-burger { display: none; position: relative; }
+.bm-nav-burger summary { list-style: none; cursor: pointer; }
+.bm-nav-burger summary::-webkit-details-marker { display: none; }
+.bm-burger-icon { display: flex; flex-direction: column; gap: 4px; padding: 8px; }
+.bm-burger-icon span { width: 22px; height: 2px; background: var(--bm-text); display: block; }
+.bm-burger-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    min-width: 150px;
+    background: #fff;
+    border: 1px solid var(--bm-border);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    padding: 0.35rem;
+    z-index: 60;
+}
+.bm-burger-menu a {
+    display: block;
+    padding: 0.6rem 0.7rem;
+    color: var(--bm-text);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+.bm-burger-menu a:hover { background: var(--bm-primary-50); color: var(--bm-primary); }
+
+@media (max-width: 640px) {
+    .bm-nav-links { display: none; }
+    .bm-nav-burger { display: block; }
+}
 
 /* ----- Hero ----- */
 .bm-eyebrow {
@@ -207,64 +252,50 @@ _LANDING_CSS = """
 }
 @media (max-width: 640px) { .bm-hero-title { font-size: 2rem; } }
 
-/* ----- Login card: black, sleek, sits at the top of the page ----- */
+/* ----- Login card: a flat black sleek rectangle, square-cornered ----- */
 div[class*="st-key-bm_login_card"] {
-    background: linear-gradient(165deg, #17171f, #0a0a0e);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 18px;
-    padding: 1.9rem 1.7rem 1.6rem;
+    background: #0a0a0a;
+    border: none;
+    border-radius: 0;
+    padding: 1.6rem 1.5rem;
     box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-.bm-login-eyebrow {
-    color: rgba(255, 255, 255, 0.45);
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-weight: 700;
-    margin-bottom: 0.35rem;
-}
-.bm-login-title { color: #fff; font-size: 1.4rem; font-weight: 800; margin: 0 0 0.2rem; }
-.bm-login-sub { color: rgba(255, 255, 255, 0.5); font-size: 0.88rem; margin-bottom: 1.2rem; }
-div[class*="st-key-bm_login_card"] [data-testid="stWidgetLabel"] p {
-    color: rgba(255, 255, 255, 0.7) !important;
-    font-weight: 600;
 }
 div[class*="st-key-bm_login_card"] input {
     background: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border-radius: 0 !important;
     color: #fff !important;
 }
-div[class*="st-key-bm_login_card"] input::placeholder { color: rgba(255, 255, 255, 0.32); }
+div[class*="st-key-bm_login_card"] input::placeholder { color: rgba(255, 255, 255, 0.4); }
 div[class*="st-key-bm_login_card"] input:focus {
-    border-color: #818CF8 !important;
-    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.28) !important;
+    border-color: #fff !important;
+    box-shadow: 0 0 0 1px #fff !important;
 }
 div[class*="st-key-bm_login_card"] [data-testid="stForm"] { border: none; padding: 0; }
 div[class*="st-key-bm_login_card"] .stFormSubmitButton > button {
-    background: #fff;
-    color: var(--bm-ink);
-    border: none;
+    background: #000;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 0 !important;
     font-weight: 700;
     box-shadow: none;
 }
-div[class*="st-key-bm_login_card"] .stFormSubmitButton > button:hover { background: #EEF0FF; }
+div[class*="st-key-bm_login_card"] .stFormSubmitButton > button:hover { background: #1a1a1a; }
 div[class*="st-key-bm_login_card"] div[data-testid="stAlert"] {
     background: rgba(239, 68, 68, 0.15);
     color: #FCA5A5;
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* ----- About: Medium-style journalistic article ----- */
-.bm-about { max-width: 680px; margin: 4rem auto 0; }
+/* ----- About: Medium-style journalistic article, set in Roboto ----- */
+.bm-about { max-width: 680px; margin: 4rem auto 0; scroll-margin-top: 90px; }
 .bm-kicker {
-    font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;
     color: var(--bm-muted);
     font-size: 0.98rem;
     margin-bottom: 0.6rem;
 }
 .bm-about-title {
-    font-family: Georgia, 'Times New Roman', serif;
     font-size: 2.05rem;
     line-height: 1.28;
     font-weight: 700;
@@ -273,7 +304,6 @@ div[class*="st-key-bm_login_card"] div[data-testid="stAlert"] {
     margin: 0 0 1.5rem;
 }
 .bm-lede {
-    font-family: Georgia, 'Times New Roman', serif;
     font-size: 1.2rem;
     line-height: 1.85;
     color: #2b2f3a;
@@ -287,14 +317,12 @@ div[class*="st-key-bm_login_card"] div[data-testid="stAlert"] {
     color: var(--bm-text);
 }
 .bm-section h3 {
-    font-family: Georgia, 'Times New Roman', serif;
     font-size: 1.34rem;
     font-weight: 700;
     color: var(--bm-text);
     margin: 2.3rem 0 0.6rem;
 }
 .bm-section p {
-    font-family: Georgia, 'Times New Roman', serif;
     font-size: 1.09rem;
     line-height: 1.8;
     color: #333743;
@@ -311,7 +339,6 @@ div[class*="st-key-bm_login_card"] div[data-testid="stAlert"] {
 .bm-contact { border-top: 1px solid var(--bm-border); margin-top: 2.8rem; padding-top: 1.9rem; }
 .bm-contact a { color: var(--bm-primary); font-weight: 700; text-decoration: none; }
 .bm-legal-heading {
-    font-family: Georgia, 'Times New Roman', serif;
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--bm-text);
