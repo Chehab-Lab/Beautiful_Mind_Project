@@ -14,13 +14,17 @@ def render(user):
     st.subheader(f"Dr. {doctor['first_name']} {doctor['last_name']}")
     st.caption("Manage your patients")
 
-    tab_list, tab_add = st.tabs(["My patients", "Add patient"])
+    tab_list, tab_add, tab_account = st.tabs(["My patients", "Add patient", "Account"])
 
     with tab_add:
         _add_patient(doctor)
 
     with tab_list:
         _list_patients(doctor)
+
+    with tab_account:
+        st.markdown("#### Change password")
+        common.change_password_form(user["id"])
 
 
 def _add_patient(doctor):

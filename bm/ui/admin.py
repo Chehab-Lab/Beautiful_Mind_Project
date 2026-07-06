@@ -7,8 +7,8 @@ from bm.ui import common
 
 def render(user):
     st.subheader("Administration")
-    tab_doctors, tab_patients, tab_stats, tab_danger = st.tabs(
-        ["Doctors", "Patients", "Usage statistics", "Danger zone"]
+    tab_doctors, tab_patients, tab_stats, tab_account, tab_danger = st.tabs(
+        ["Doctors", "Patients", "Usage statistics", "Account", "Danger zone"]
     )
     with tab_doctors:
         _doctors()
@@ -16,8 +16,15 @@ def render(user):
         _patients()
     with tab_stats:
         _stats()
+    with tab_account:
+        _account(user)
     with tab_danger:
         _danger_zone()
+
+
+def _account(user):
+    st.markdown("#### Change password")
+    common.change_password_form(user["id"], must_change=bool(user.get("must_change_password")))
 
 
 # ---------------------------------------------------------------------------

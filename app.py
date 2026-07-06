@@ -111,38 +111,40 @@ def _do_login(username, password):
     st.rerun()
 
 
-def _nav_bar(active):
+def _render_nav(items):
     """Render the top nav as a single block of hand-written HTML/CSS.
 
     A real navbar (not Streamlit columns/widgets) so it reads like a
-    production site: logo on the left, an About/Home item on the right that
-    collapses into a right-aligned hamburger on mobile. Links use
-    ``target="_self"`` so navigation stays in the same tab, and route through
-    the ``?page=`` query param that ``main()`` reads.
+    production site: the "Beautiful Mind" logo on the left, and ``items``
+    (``(label, href)`` pairs) on the right that collapse into a right-aligned
+    hamburger on mobile. Links use ``target="_self"`` so navigation stays in
+    the same tab, routing through query params that ``main()`` reads.
     """
-    if active == "about":
-        target, label = "home", "Home"
-    else:
-        target, label = "about", "About"
+    links = "".join(
+        f'<a href="{href}" target="_self">{label}</a>' for label, href in items
+    )
     st.markdown(
         f"""
 <div class="bm-nav">
   <div class="bm-nav-row">
-    <a class="bm-nav-logo" href="?page=home" target="_self">Beautiful Mind</a>
-    <nav class="bm-nav-links">
-      <a href="?page={target}" target="_self">{label}</a>
-    </nav>
+    <a class="bm-nav-logo" href="?" target="_self">Beautiful Mind</a>
+    <nav class="bm-nav-links">{links}</nav>
     <details class="bm-nav-menu">
       <summary aria-label="Open menu"><span></span><span></span><span></span></summary>
-      <div class="bm-nav-drop">
-        <a href="?page={target}" target="_self">{label}</a>
-      </div>
+      <div class="bm-nav-drop">{links}</div>
     </details>
   </div>
 </div>
 """,
         unsafe_allow_html=True,
     )
+
+
+def _nav_bar(active):
+    if active == "about":
+        _render_nav([("Home", "?page=home")])
+    else:
+        _render_nav([("About", "?page=about")])
 
 
 def login_view():
@@ -251,6 +253,7 @@ def logout():
         pass
     st.session_state.pop("user", None)
     st.session_state.pop("_auth_token", None)
+    st.query_params.clear()  # drop ?logout=1 from the URL
     st.rerun()
 
 
@@ -259,6 +262,9 @@ def main():
     _write_pending_cookie()
     _restore_or_wait()
     user = st.session_state.get("user")
+    if user is not None and st.query_params.get("logout"):
+        logout()
+        return
     if user is None:
         if st.query_params.get("page") == "about":
             about_view()
@@ -270,20 +276,14 @@ def main():
 
 
 def _render_authenticated(user):
-    with st.sidebar:
-        st.markdown(
-            '<div style="font-size:1.2rem;font-weight:700;letter-spacing:-0.01em;'
-            'color:#000;margin:0.2rem 0 0.9rem;">Beautiful Mind</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(f"**{user['username']}**")
-        st.caption(user["role"].title())
-        if st.button("Sign out"):
-            logout()
+    # The signed-in chrome mirrors the signed-out pages: the same custom HTML
+    # navbar, with Log out as a nav item instead of a Streamlit sidebar drawer.
+    theme.inject_landing()
+    _render_nav([("Log out", "?logout=1")])
 
     # A user on a one-time password must change it before doing anything else.
     if user.get("must_change_password"):
-        st.title("Set your password")
+        st.subheader("Set your password")
         if common.change_password_form(user["id"], must_change=True):
             user["must_change_password"] = 0
             st.session_state["user"] = user
