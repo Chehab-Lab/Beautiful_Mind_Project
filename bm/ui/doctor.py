@@ -24,21 +24,35 @@ def render(user):
 
 
 def _add_patient(doctor):
+    # After a patient is created, show their one-time credentials.
+    creds = st.session_state.get("last_created_credentials")
+    if creds:
+        common.show_new_credentials(*creds)
+        if st.button("Done", key="dismiss_creds"):
+            del st.session_state["last_created_credentials"]
+            st.rerun()
+        return
+
+    # The form stays hidden until the doctor chooses to add a patient.
+    if not st.session_state.get("doc_show_add_patient"):
+        if st.button("Add patient", type="primary", key="doc_add_open"):
+            st.session_state["doc_show_add_patient"] = True
+            st.rerun()
+        return
+
     st.markdown("#### New patient")
     values = common.patient_form("doc_add")
-    if st.button("Create patient", type="primary"):
+    b1, b2 = st.columns(2)
+    if b1.button("Create patient", type="primary", key="doc_add_create"):
         patient, username, one_time_password = repository.create_patient(
             doctor_id=doctor["id"], **values
         )
         st.session_state["last_created_credentials"] = (username, one_time_password)
+        st.session_state["doc_show_add_patient"] = False
         st.rerun()
-
-    creds = st.session_state.get("last_created_credentials")
-    if creds:
-        common.show_new_credentials(*creds)
-        if st.button("Dismiss", key="dismiss_creds"):
-            del st.session_state["last_created_credentials"]
-            st.rerun()
+    if b2.button("Cancel", key="doc_add_cancel"):
+        st.session_state["doc_show_add_patient"] = False
+        st.rerun()
 
 
 def _list_patients(doctor):

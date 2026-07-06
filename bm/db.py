@@ -150,6 +150,22 @@ def init_db() -> None:
     _seed_default_admin()
 
 
+def reset_db() -> None:
+    """Wipe ALL application data and re-seed the default admin account.
+
+    Truncates every app table (resetting id sequences) and recreates the
+    bootstrap ``admin``/``admin`` account. This is destructive and
+    irreversible — it is only reachable from the admin "Danger zone".
+    """
+    query(SCHEMA, commit=True)  # ensure tables exist before truncating
+    query(
+        "TRUNCATE sessions, usage_events, notes, patients, doctors, users "
+        "RESTART IDENTITY CASCADE",
+        commit=True,
+    )
+    _seed_default_admin()
+
+
 def _seed_default_admin() -> None:
     """Seed a bootstrap admin (admin/admin) that must be changed on first login.
 

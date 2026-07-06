@@ -1,14 +1,14 @@
 """Admin view: manage doctors and patients, and view usage statistics."""
 import streamlit as st
 
-from bm import repository
+from bm import db, repository
 from bm.ui import common
 
 
 def render(user):
     st.subheader("Administration")
-    tab_doctors, tab_patients, tab_stats = st.tabs(
-        ["Doctors", "Patients", "Usage statistics"]
+    tab_doctors, tab_patients, tab_stats, tab_danger = st.tabs(
+        ["Doctors", "Patients", "Usage statistics", "Danger zone"]
     )
     with tab_doctors:
         _doctors()
@@ -16,35 +16,19 @@ def render(user):
         _patients()
     with tab_stats:
         _stats()
+    with tab_danger:
+        _danger_zone()
 
 
 # ---------------------------------------------------------------------------
 # Doctors
 # ---------------------------------------------------------------------------
 def _doctors():
-    st.markdown("#### Add a doctor")
-    with st.form("add_doctor"):
-        c1, c2 = st.columns(2)
-        username = c1.text_input("Username")
-        phone = c2.text_input("Phone number")
-        first = c1.text_input("First name")
-        last = c2.text_input("Last name")
-        password = st.text_input("Initial password", type="password")
-        force_change = st.checkbox("Require password change on first login", value=True)
-        submitted = st.form_submit_button("Create doctor", type="primary")
-    if submitted:
-        if not (username and first and last and password):
-            st.error("Username, first name, last name and password are required.")
-        else:
-            try:
-                repository.create_doctor(
-                    username, password, first, last, phone,
-                    must_change_password=force_change,
-                )
-                st.success(f"Doctor '{username.lower()}' created.")
-                st.rerun()
-            except Exception as exc:  # noqa: BLE001 - e.g. duplicate username
-                st.error(f"Could not create doctor: {exc}")
+    if st.session_state.get("admin_show_add_doctor"):
+        _add_doctor_form()
+    elif st.button("Add doctor", type="primary", key="admin_add_doctor_open"):
+        st.session_state["admin_show_add_doctor"] = True
+        st.rerun()
 
     st.divider()
     st.markdown("#### Existing doctors")
@@ -68,6 +52,38 @@ def _doctors():
                 st.rerun()
 
 
+def _add_doctor_form():
+    st.markdown("#### Add a doctor")
+    with st.form("add_doctor"):
+        c1, c2 = st.columns(2)
+        username = c1.text_input("Username")
+        phone = c2.text_input("Phone number")
+        first = c1.text_input("First name")
+        last = c2.text_input("Last name")
+        password = st.text_input("Initial password", type="password")
+        force_change = st.checkbox("Require password change on first login", value=True)
+        b1, b2 = st.columns(2)
+        submitted = b1.form_submit_button("Create doctor", type="primary")
+        cancelled = b2.form_submit_button("Cancel")
+    if cancelled:
+        st.session_state["admin_show_add_doctor"] = False
+        st.rerun()
+    if submitted:
+        if not (username and first and last and password):
+            st.error("Username, first name, last name and password are required.")
+        else:
+            try:
+                repository.create_doctor(
+                    username, password, first, last, phone,
+                    must_change_password=force_change,
+                )
+                st.session_state["admin_show_add_doctor"] = False
+                st.success(f"Doctor '{username.lower()}' created.")
+                st.rerun()
+            except Exception as exc:  # noqa: BLE001 - e.g. duplicate username
+                st.error(f"Could not create doctor: {exc}")
+
+
 # ---------------------------------------------------------------------------
 # Patients
 # ---------------------------------------------------------------------------
@@ -78,22 +94,17 @@ def _patients():
         {d["id"]: f"Dr. {d['first_name']} {d['last_name']}" for d in doctors}
     )
 
-    st.markdown("#### Add a patient")
-    assigned = st.selectbox(
-        "Assign to doctor", list(doctor_options.keys()),
-        format_func=lambda k: doctor_options[k], key="admin_add_doctor",
-    )
-    values = common.patient_form("admin_add")
-    if st.button("Create patient", type="primary"):
-        _, username, otp = repository.create_patient(doctor_id=assigned, **values)
-        st.session_state["admin_new_creds"] = (username, otp)
-        st.rerun()
     creds = st.session_state.get("admin_new_creds")
     if creds:
         common.show_new_credentials(*creds)
-        if st.button("Dismiss", key="admin_dismiss_creds"):
+        if st.button("Done", key="admin_dismiss_creds"):
             del st.session_state["admin_new_creds"]
             st.rerun()
+    elif st.session_state.get("admin_show_add_patient"):
+        _add_patient_form(doctor_options)
+    elif st.button("Add patient", type="primary", key="admin_add_patient_open"):
+        st.session_state["admin_show_add_patient"] = True
+        st.rerun()
 
     st.divider()
     st.markdown("#### Existing patients")
@@ -131,6 +142,24 @@ def _patients():
                         language="text")
 
 
+def _add_patient_form(doctor_options):
+    st.markdown("#### Add a patient")
+    assigned = st.selectbox(
+        "Assign to doctor", list(doctor_options.keys()),
+        format_func=lambda k: doctor_options[k], key="admin_add_doctor",
+    )
+    values = common.patient_form("admin_add")
+    b1, b2 = st.columns(2)
+    if b1.button("Create patient", type="primary", key="admin_add_create"):
+        _, username, otp = repository.create_patient(doctor_id=assigned, **values)
+        st.session_state["admin_new_creds"] = (username, otp)
+        st.session_state["admin_show_add_patient"] = False
+        st.rerun()
+    if b2.button("Cancel", key="admin_add_cancel"):
+        st.session_state["admin_show_add_patient"] = False
+        st.rerun()
+
+
 # ---------------------------------------------------------------------------
 # Usage statistics
 # ---------------------------------------------------------------------------
@@ -158,3 +187,45 @@ def _stats():
         for r in rows
     ]
     st.dataframe(table, use_container_width=True, hide_index=True)
+
+
+# ---------------------------------------------------------------------------
+# Danger zone
+# ---------------------------------------------------------------------------
+_RESET_PHRASE = "RESET"
+
+
+@st.dialog("Reset the database?")
+def _confirm_reset_dialog():
+    st.error(
+        "This permanently deletes **all** doctors, patients, notes and usage "
+        "data. Only the default `admin` / `admin` account will remain, and you "
+        "will be signed out. This cannot be undone."
+    )
+    phrase = st.text_input(f"Type {_RESET_PHRASE} to confirm", key="reset_phrase")
+    c1, c2 = st.columns(2)
+    if c1.button("Cancel", use_container_width=True, key="reset_cancel"):
+        st.rerun()
+    if c2.button(
+        "Reset database",
+        type="primary",
+        use_container_width=True,
+        disabled=phrase.strip().upper() != _RESET_PHRASE,
+        key="reset_confirm",
+    ):
+        db.reset_db()
+        # The current session row is gone; drop the in-memory user so the next
+        # run lands on the login screen.
+        st.session_state.pop("user", None)
+        st.session_state.pop("_auth_token", None)
+        st.rerun()
+
+
+def _danger_zone():
+    st.markdown("#### Reset database")
+    st.caption(
+        "Wipe all doctors, patients, notes and usage data and restore the "
+        "default admin account. This is irreversible."
+    )
+    if st.button("Reset database", key="danger_reset_open"):
+        _confirm_reset_dialog()

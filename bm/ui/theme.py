@@ -40,6 +40,11 @@ _CSS = """
 
 html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 [data-testid="stAppViewContainer"], [data-testid="stHeader"] { background: var(--bm-bg); }
+
+/* Hide Streamlit's "Press Enter to submit form" / "Press Enter to apply"
+   helper text under inputs, across every view. */
+[data-testid="InputInstructions"],
+[data-testid="stTextInputInstructions"] { display: none !important; }
 html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"],
 [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"],
 .stTextInput input, .stNumberInput input, .stTextArea textarea,
@@ -291,9 +296,6 @@ div[class*="st-key-bm_login_box"] [data-testid="stWidgetLabel"] p {
     font-weight: 600;
     color: var(--bm-text);
 }
-
-/* Hide Streamlit's "Press Enter to submit form" helper text. */
-div[class*="st-key-bm_login_box"] [data-testid="InputInstructions"] { display: none !important; }
 
 /* Square inputs to sit cohesively with the square button. */
 div[class*="st-key-bm_login_box"] .stTextInput input { border-radius: 0 !important; }
