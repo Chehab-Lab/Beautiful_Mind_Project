@@ -116,37 +116,49 @@ def _go_to(page):
     st.rerun()
 
 
-def _nav_bar():
-    """Nav bar with a plain (non-link) wordmark and an About/Home toggle.
+def _nav_target():
+    """Return (label, target_page) for the nav action given the current page."""
+    if st.session_state.get("_page") == "about":
+        return "Home", "login"
+    return "About", "about"
 
-    The toggle is a real Streamlit button so switching pages reruns the app
-    in place — no full page navigation, no new tab.
+
+def _nav_bar():
+    """Nav bar: a plain (non-link) wordmark plus a nav item that reruns the
+    app in place (no full navigation, no new tab).
+
+    On desktop the item shows directly in the bar; on mobile it collapses
+    under a ``☰`` menu.
     """
+    label, target = _nav_target()
     with st.container(key="bm_nav"):
         left, right = st.columns([3, 1])
         with left:
             st.markdown('<div class="bm-nav-logo">Beautiful Mind</div>', unsafe_allow_html=True)
         with right:
-            if st.session_state.get("_page") == "about":
-                if st.button("Home", key="nav_home"):
-                    _go_to("login")
-            else:
-                if st.button("About", key="nav_about"):
-                    _go_to("about")
+            # Desktop: the item sits right in the nav bar.
+            with st.container(key="bm_nav_desktop"):
+                if st.button(label, key="nav_desktop"):
+                    _go_to(target)
+            # Mobile: the same item collapsed under a three-line menu.
+            with st.container(key="bm_nav_mobile"):
+                with st.popover("☰"):
+                    if st.button(label, key="nav_mobile"):
+                        _go_to(target)
 
 
 def login_view():
-    """Signed-out landing page: nav bar plus a centered login card."""
+    """Signed-out landing page: nav bar plus a right-aligned login card."""
     theme.inject_landing()
     _nav_bar()
 
-    _, mid, _ = st.columns([1, 1.35, 1])
+    _, mid = st.columns([1.5, 1.15])
     with mid:
         with st.container(key="bm_login_box"):
             st.markdown(
                 '<div class="bm-login-head">'
-                '<div class="bm-login-title">Welcome back</div>'
-                '<div class="bm-login-sub">Sign in to continue to Beautiful Mind.</div>'
+                '<div class="bm-login-title">Welcome</div>'
+                '<div class="bm-login-sub">Log in to continue to Beautiful Mind.</div>'
                 "</div>",
                 unsafe_allow_html=True,
             )
@@ -155,7 +167,7 @@ def login_view():
                 password = st.text_input(
                     "Password", type="password", placeholder="Enter your password"
                 )
-                submitted = st.form_submit_button("Sign in", type="primary")
+                submitted = st.form_submit_button("Log in", type="primary")
             if submitted:
                 _do_login(username, password)
 
