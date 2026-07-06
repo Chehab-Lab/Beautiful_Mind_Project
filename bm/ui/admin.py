@@ -62,11 +62,15 @@ def _doctors():
 def _add_doctor_form():
     st.markdown("#### Add a doctor")
     with st.form("add_doctor"):
+        # Each row is its own st.columns so the fields keep a sensible order
+        # (first name, last name, then account details) when they stack on
+        # mobile, instead of interleaving across two accumulating columns.
         c1, c2 = st.columns(2)
-        username = c1.text_input("Username")
-        phone = c2.text_input("Phone number")
         first = c1.text_input("First name")
         last = c2.text_input("Last name")
+        c3, c4 = st.columns(2)
+        username = c3.text_input("Username")
+        phone = c4.text_input("Phone number")
         password = st.text_input("Initial password", type="password")
         force_change = st.checkbox("Require password change on first login", value=True)
         b1, b2 = st.columns(2)
