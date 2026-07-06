@@ -136,17 +136,25 @@ def _nav_bar():
 
 
 def login_view():
-    """Signed-out landing page: nav bar plus a centered login form."""
+    """Signed-out landing page: nav bar plus a centered login card."""
     theme.inject_landing()
     _nav_bar()
 
-    _, mid, _ = st.columns([1, 1.2, 1])
+    _, mid, _ = st.columns([1, 1.35, 1])
     with mid:
         with st.container(key="bm_login_box"):
-            st.subheader("Sign in")
+            st.markdown(
+                '<div class="bm-login-head">'
+                '<div class="bm-login-title">Welcome back</div>'
+                '<div class="bm-login-sub">Sign in to continue to Beautiful Mind.</div>'
+                "</div>",
+                unsafe_allow_html=True,
+            )
             with st.form("login"):
-                username = st.text_input("Username")
-                password = st.text_input("Password", type="password")
+                username = st.text_input("Username", placeholder="Enter your username")
+                password = st.text_input(
+                    "Password", type="password", placeholder="Enter your password"
+                )
                 submitted = st.form_submit_button("Sign in", type="primary")
             if submitted:
                 _do_login(username, password)
