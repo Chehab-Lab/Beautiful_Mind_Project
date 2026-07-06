@@ -24,10 +24,10 @@ _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap');
 
 :root {
-    --bm-primary: #4F46E5;      /* indigo 600 — the single brand hue */
-    --bm-primary-700: #4338CA;
-    --bm-primary-50: #EEF2FF;
-    --bm-primary-100: #E0E7FF;
+    --bm-primary: #0A0A0A;      /* near-black — the single brand accent */
+    --bm-primary-700: #000000;
+    --bm-primary-50: #F3F4F6;   /* light gray hover surface */
+    --bm-primary-100: #E5E7EB;  /* subtle focus ring */
     --bm-bg: #FFFFFF;
     --bm-surface: #FFFFFF;
     --bm-text: #1F2333;
@@ -72,7 +72,7 @@ div[data-testid="stTabs"] div[data-baseweb="tab-list"] {
     -webkit-overflow-scrolling: touch;
     background: var(--bm-surface);
     border: 1px solid var(--bm-border);
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow: 0 1px 3px rgba(20, 25, 60, 0.05);
 }
 div[data-testid="stTabs"] div[data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
@@ -80,7 +80,7 @@ div[data-testid="stTabs"] button[data-baseweb="tab"] {
     flex: 0 0 auto;
     white-space: nowrap;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 0.5rem 1rem;
     min-height: 42px;
     font-weight: 600;
@@ -97,30 +97,44 @@ div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
 div[data-testid="stTabs"] div[data-baseweb="tab-highlight"],
 div[data-testid="stTabs"] div[data-baseweb="tab-border"] { display: none; }
 
-/* ----- Buttons: full-width, rounded, elevated, touch-friendly ----- */
+/* ----- Buttons: full-width, square, touch-friendly. Primary is black to
+   match the login button; secondary is a bordered white button. ----- */
 .stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {
     width: 100%;
-    min-height: 48px;
-    border-radius: 10px;
+    min-height: 46px;
+    border-radius: 0;
     font-weight: 600;
     border: 1px solid var(--bm-border);
-    transition: transform 0.05s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    background: var(--bm-surface);
+    color: var(--bm-text);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+}
+.stButton > button:hover, .stFormSubmitButton > button:hover, .stDownloadButton > button:hover {
+    border-color: #000;
+    color: #000;
 }
 .stButton > button:active, .stFormSubmitButton > button:active { transform: translateY(1px); }
 .stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primaryFormSubmit"] {
     border: none;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.32);
+    background: #000;
+    color: #fff;
+    box-shadow: none;
+}
+.stButton > button[kind="primary"]:hover,
+.stFormSubmitButton > button[kind="primaryFormSubmit"]:hover {
+    background: #1a1a1a;
+    color: #fff;
 }
 
-/* ----- Inputs: larger targets, focus ring in brand hue ----- */
+/* ----- Inputs: larger targets, square, black focus ring ----- */
 .stTextInput input, .stNumberInput input, .stTextArea textarea,
 div[data-baseweb="select"] > div {
-    border-radius: 10px !important;
+    border-radius: 0 !important;
     min-height: 44px;
 }
 .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
-    border-color: var(--bm-primary) !important;
-    box-shadow: 0 0 0 3px var(--bm-primary-100) !important;
+    border-color: #000 !important;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* ----- Cards: metrics & expanders ----- */

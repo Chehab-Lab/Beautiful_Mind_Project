@@ -271,6 +271,11 @@ def main():
 
 def _render_authenticated(user):
     with st.sidebar:
+        st.markdown(
+            '<div style="font-size:1.2rem;font-weight:700;letter-spacing:-0.01em;'
+            'color:#000;margin:0.2rem 0 0.9rem;">Beautiful Mind</div>',
+            unsafe_allow_html=True,
+        )
         st.markdown(f"**{user['username']}**")
         st.caption(user["role"].title())
         if st.button("Sign out"):

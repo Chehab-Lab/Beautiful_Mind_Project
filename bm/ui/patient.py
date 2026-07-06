@@ -9,8 +9,8 @@ import streamlit.components.v1 as components
 from bm import ai, audio, repository
 from bm.ui import common, recorder
 
-# Monochromatic indigo contribution palette (empty -> most).
-_HEAT_COLORS = ["#E9EAF2", "#C7C9F4", "#9A9DEC", "#6E6FE4", "#4F46E5"]
+# Monochrome grayscale-to-black contribution palette (empty -> most).
+_HEAT_COLORS = ["#EDEEF1", "#CFD2D8", "#9AA0AB", "#565C68", "#0A0A0A"]
 _HEAT_WEEKS = 26
 
 _MIME_SUFFIX = {
