@@ -47,7 +47,9 @@ def _client():
         from openai import OpenAI
     except ImportError as exc:  # pragma: no cover - dependency guard
         raise AIConfigError("The 'openai' package is not installed.") from exc
-    return OpenAI(api_key=get_api_key())
+    # Long recordings take a while to upload and transcribe — give the API
+    # room rather than letting the default timeout abort a long note.
+    return OpenAI(api_key=get_api_key(), timeout=300.0, max_retries=2)
 
 
 def is_configured() -> bool:

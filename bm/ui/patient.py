@@ -74,37 +74,50 @@ def _record(patient):
     if err:
         st.error(err)
 
-    # A queued recording is transcribed on its own run WITHOUT re-rendering the
-    # recorder. Otherwise Streamlit keeps the recorder (and tabs) on screen and
-    # overlays the next run while transcription blocks, so it looks duplicated.
-    pending = st.session_state.pop("_pending_recording", None)
-    if pending is not None:
-        _transcribe_and_save(patient, pending)
-        return
+    # The recorder and the "transcribing…" status share ONE slot, so the
+    # recorder can never render a second time while transcription blocks
+    # (which is what made the UI look duplicated).
+    slot = st.empty()
 
-    result = recorder.record_button(key="voice_recorder")
-    if not result or not result.get("audio"):
-        return
-    # Ignore reruns that replay the same recording.
-    if result.get("id") == st.session_state.get("last_record_id"):
-        return
-    st.session_state["last_record_id"] = result.get("id")
-    # Hand off to a clean processing run (no recorder) to do the slow work.
-    st.session_state["_pending_recording"] = result
+    # A queued recording is kept in session_state until it is actually saved,
+    # so a long one whose run gets interrupted is retried rather than lost.
+    pending = st.session_state.get("_pending_recording")
+    if pending is None:
+        with slot.container():
+            result = recorder.record_button(key="voice_recorder")
+        if not result or not result.get("audio"):
+            return
+        # Ignore reruns that replay the same recording.
+        if result.get("id") == st.session_state.get("last_record_id"):
+            return
+        st.session_state["last_record_id"] = result.get("id")
+        st.session_state["_pending_recording"] = result
+        pending = result
+
+    with slot.container():
+        with st.spinner("Transcribing and anonymizing…"):
+            ok, error = _transcribe_and_save(patient, pending)
+
+    # Only clear the queued recording once processing finished (ok or a real
+    # error). An interrupted run leaves it in place to retry next time.
+    st.session_state.pop("_pending_recording", None)
+    if ok:
+        st.session_state["note_saved"] = True
+    elif error:
+        st.session_state["_record_error"] = error
     st.rerun()
 
 
 def _transcribe_and_save(patient, result):
-    audio_bytes = base64.b64decode(result["audio"])
-    duration = float(result.get("duration") or 0)
-    suffix = _suffix_for(result.get("mime"))
-    with st.spinner("Transcribing and anonymizing…"):
-        try:
-            transcript = ai.transcribe(audio_bytes, suffix=suffix)
-            anonymized = ai.anonymize(transcript)
-        except (ai.AIServiceError, ai.AIConfigError) as exc:
-            st.session_state["_record_error"] = str(exc)
-            st.rerun()
+    """Transcribe, anonymize and store one recording. Returns (ok, error)."""
+    try:
+        audio_bytes = base64.b64decode(result["audio"])
+        duration = float(result.get("duration") or 0)
+        suffix = _suffix_for(result.get("mime"))
+        transcript = ai.transcribe(audio_bytes, suffix=suffix)
+        anonymized = ai.anonymize(transcript)
+    except (ai.AIServiceError, ai.AIConfigError) as exc:
+        return False, str(exc)
     tokens = audio.count_tokens(transcript)
     repository.add_note_with_usage(
         patient_id=patient["id"],
@@ -112,9 +125,7 @@ def _transcribe_and_save(patient, result):
         duration_seconds=duration,
         transcribed_tokens=tokens,
     )
-    # Return to a clean recorder without revealing the transcription.
-    st.session_state["note_saved"] = True
-    st.rerun()
+    return True, None
 
 
 def _history(patient):
