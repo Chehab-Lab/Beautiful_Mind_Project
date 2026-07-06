@@ -87,7 +87,7 @@
       <div class="ring" id="ring"></div>
       <button class="btn idle" id="btn" aria-label="Record"><span class="ico"></span></button>
     </div>
-    <div class="hint" id="hint">Long‑press to record</div>
+    <div class="hint" id="hint">Tap to record</div>
   </div>
 
 <script>
@@ -115,7 +115,7 @@ const hint = document.getElementById("hint");
 let mediaRecorder = null, chunks = [], stream = null;
 let audioCtx = null, analyser = null, rafId = null;
 let recording = false, startTime = 0, pickedMime = "";
-let pressTimer = null, justStarted = false;
+let toggleBusy = false;
 
 function pickMime() {
   const cands = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", "audio/ogg"];
@@ -131,7 +131,7 @@ function setUI(rec) {
   ring.classList.toggle("rec", rec);
   if (!rec) ring.style.transform = "scale(1)";
   hint.classList.remove("err");
-  hint.textContent = rec ? "Recording… tap to stop" : "Long‑press to record";
+  hint.textContent = rec ? "Recording, tap to stop" : "Tap to record";
 }
 
 function meter() {
@@ -148,7 +148,6 @@ function meter() {
 
 async function beginRecording() {
   if (recording) return;
-  justStarted = true; // swallow the click that pairs with the initiating press
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (err) {
@@ -207,25 +206,18 @@ function onStop() {
   setUI(false);
 }
 
-// ---- Interaction: long-press to start, tap to stop ----
+// ---- Interaction: tap to start, tap to stop ----
 btn.addEventListener("contextmenu", (e) => e.preventDefault());
 
-btn.addEventListener("pointerdown", (e) => {
-  e.preventDefault();
-  if (recording) return;
-  pressTimer = setTimeout(() => { pressTimer = null; beginRecording(); }, 350);
-});
-
-function clearPress() {
-  if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-}
-btn.addEventListener("pointerup", clearPress);
-btn.addEventListener("pointercancel", clearPress);
-btn.addEventListener("pointerleave", clearPress);
-
-btn.addEventListener("click", () => {
-  if (justStarted) { justStarted = false; return; }
-  if (recording) stopRecording();
+btn.addEventListener("click", async () => {
+  if (toggleBusy) return;         // ignore double-fire while (de)initialising
+  toggleBusy = true;
+  try {
+    if (recording) stopRecording();
+    else await beginRecording();
+  } finally {
+    toggleBusy = false;
+  }
 });
 
 Streamlit.onRender(() => Streamlit.setFrameHeight(230));
