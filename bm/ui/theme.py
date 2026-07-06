@@ -47,9 +47,13 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"],
     font-family: var(--bm-font);
 }
 
-/* ----- Layout: tight, phone-width ----- */
-.block-container {
-    padding: 1.1rem 1rem 2rem;
+/* ----- Layout: tight, phone-width. Target the testid too (higher
+   specificity) so our smaller top padding wins over Streamlit's large
+   default, which otherwise leaves a big blank gap above the content. ----- */
+.block-container,
+[data-testid="stMainBlockContainer"],
+[data-testid="stAppViewBlockContainer"] {
+    padding: 1rem 1rem 2rem !important;
     max-width: 680px;
 }
 h1, h2, h3 { letter-spacing: -0.01em; color: var(--bm-text); }
