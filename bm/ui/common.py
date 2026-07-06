@@ -62,8 +62,8 @@ def patient_form(prefix, defaults=None):
 
 def show_new_credentials(username, password):
     """Display freshly generated credentials with a clear one-time warning."""
-    st.success("Patient account created. Share these credentials securely — "
-               "the password is shown only once.")
+    st.success("Patient account created. Share these credentials securely. "
+               "The password is shown only once.")
     st.code(f"Username: {username}\nOne-time password: {password}", language="text")
 
 

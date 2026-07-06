@@ -1,4 +1,4 @@
-"""BeautifulMind — Streamlit application entry point.
+"""BeautifulMind Streamlit application entry point.
 
 Single-page, role-based app: login routes to the doctor, patient or admin
 experience. A signed-in session is remembered in a browser cookie backed by a

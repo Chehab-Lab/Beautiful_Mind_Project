@@ -63,6 +63,7 @@ def render(user):
         _account(user)
 
 
+@st.fragment
 def _record(patient):
     if not ai.is_configured():
         st.warning(
@@ -71,14 +72,10 @@ def _record(patient):
         )
         return
 
-    # A one-off toast once a recording has been handed to the background worker.
-    if st.session_state.pop("_queued_toast", False):
-        st.toast("Recording received — it will appear under 'My notes' once ready.", icon="🎙️")
-
     result = recorder.record_button(key="voice_recorder")
     st.caption(
         "Recordings are transcribed in the background and appear under "
-        "**My notes** when ready — you can keep recording or leave this page."
+        "**My notes** when ready. You can keep recording or leave this page."
     )
     if not result or not result.get("audio"):
         return
@@ -88,8 +85,10 @@ def _record(patient):
     st.session_state["last_record_id"] = result.get("id")
 
     # Transcription + storage run in a background thread so the UI never blocks
-    # (a blocking run is what made the recorder look duplicated). Config and the
-    # DB connection string are resolved here — the worker must not touch st.
+    # (a blocking run is what made the recorder look duplicated). No extra
+    # st.rerun() here: Streamlit already reruns once when the recorder sends its
+    # value, and adding another triggers a second loading cycle. Config and the
+    # DB connection string are resolved here; the worker must not touch st.
     thread = threading.Thread(
         target=_process_recording,
         kwargs={
@@ -103,8 +102,7 @@ def _record(patient):
         daemon=True,
     )
     thread.start()
-    st.session_state["_queued_toast"] = True
-    st.rerun()
+    st.toast("Recording received. It will appear under 'My notes' once ready.", icon="🎙️")
 
 
 def _process_recording(patient_id, audio_b64, mime, duration, ai_config, dsn):

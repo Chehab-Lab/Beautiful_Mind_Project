@@ -24,7 +24,7 @@ _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap');
 
 :root {
-    --bm-primary: #0A0A0A;      /* near-black — the single brand accent */
+    --bm-primary: #0A0A0A;      /* near-black, the single brand accent */
     --bm-primary-700: #000000;
     --bm-primary-50: #F3F4F6;   /* light gray hover surface */
     --bm-primary-100: #E5E7EB;  /* subtle focus ring */
@@ -287,7 +287,7 @@ div[class*="st-key-bm_login_box"] {
     color: var(--bm-muted);
 }
 
-/* The card is the only visible boundary — drop the form's own border/padding. */
+/* The card is the only visible boundary, so drop the form's own border. */
 div[class*="st-key-bm_login_box"] [data-testid="stForm"] {
     border: none;
     padding: 0;

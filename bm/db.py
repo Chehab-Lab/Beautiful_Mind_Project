@@ -166,7 +166,7 @@ def reset_db() -> None:
 
     Truncates every app table (resetting id sequences) and recreates the
     bootstrap ``admin``/``admin`` account. This is destructive and
-    irreversible — it is only reachable from the admin "Danger zone".
+    irreversible. It is only reachable from the admin "Danger zone".
     """
     query(SCHEMA, commit=True)  # ensure tables exist before truncating
     query(

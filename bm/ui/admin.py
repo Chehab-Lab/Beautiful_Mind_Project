@@ -100,7 +100,7 @@ def _add_doctor_form():
 # ---------------------------------------------------------------------------
 def _patients():
     doctors = repository.list_doctors()
-    doctor_options = {None: "— Unassigned —"}
+    doctor_options = {None: "Unassigned"}
     doctor_options.update(
         {d["id"]: f"Dr. {d['first_name']} {d['last_name']}" for d in doctors}
     )
@@ -178,7 +178,7 @@ def _stats():
     st.markdown("#### Daily token target")
     st.caption(
         "A reference target for tokens a patient consumes per day. Patients may "
-        "exceed it — it is only shown for guidance on their Usage tab."
+        "exceed it. It is only shown for guidance on their Usage tab."
     )
     current = repository.get_daily_token_target()
     col, _ = st.columns([1, 1])
