@@ -155,67 +155,88 @@ iframe[title="bm_voice_recorder"] { width: 100%; }
 
 _LANDING_CSS = """
 <style>
-/* ----- Nav bar: plain black wordmark (not a link) + an About/Home item.
-   The item is a real Streamlit control so switching pages reruns the app in
-   place instead of doing a browser navigation. ----- */
-div[class*="st-key-bm_nav"] {
+/* ----- Nav bar: hand-written HTML/CSS (not Streamlit widgets) so it reads
+   like a real production navbar. Logo left, links right; on mobile the links
+   collapse into a right-aligned hamburger via a pure-CSS <details> menu. --- */
+.bm-nav {
     position: sticky;
     top: 0;
     z-index: 50;
     background: var(--bm-surface);
     border-bottom: 1px solid var(--bm-border);
-    padding: 0.55rem 0;
-    margin-bottom: 1.6rem;
+    margin-bottom: 2.2rem;
 }
-/* Keep the logo and the menu on one row at every width (Streamlit columns
-   otherwise stack on narrow screens, dropping the ☰ below the logo). */
-div[class*="st-key-bm_nav"] div[data-testid="stHorizontalBlock"] {
-    flex-wrap: nowrap;
+.bm-nav-row {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    height: 58px;
 }
-div[class*="st-key-bm_nav"] div[data-testid="stColumn"] { min-width: 0 !important; }
 .bm-nav-logo {
-    font-size: 1.28rem;
+    font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    color: #000;
+    color: #000 !important;
+    text-decoration: none !important;
     white-space: nowrap;
 }
-div[class*="st-key-bm_nav"] .stButton { display: flex; justify-content: flex-end; }
-div[class*="st-key-bm_nav"] .stButton > button {
-    width: auto !important;
-    min-height: auto !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+.bm-nav-links { display: flex; align-items: center; gap: 1.5rem; }
+.bm-nav-links a {
     color: var(--bm-text) !important;
-    font-weight: 500;
+    text-decoration: none !important;
     font-size: 0.95rem;
-    padding: 0.25rem 0.2rem !important;
+    font-weight: 500;
 }
-div[class*="st-key-bm_nav"] .stButton > button:hover { color: var(--bm-primary) !important; }
+.bm-nav-links a:hover { color: var(--bm-primary) !important; }
 
-/* Desktop shows the nav item directly; mobile collapses it under a ☰ menu,
-   pinned to the right of the bar. */
-div[class*="st-key-bm_nav_mobile"] { display: none; }
-div[class*="st-key-bm_nav_mobile"] [data-testid="stPopover"] {
+/* Mobile hamburger (pure CSS via <details>/<summary>) */
+.bm-nav-menu { display: none; position: relative; }
+.bm-nav-menu > summary {
+    list-style: none;
+    cursor: pointer;
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 42px;
+    height: 42px;
+    margin-right: -0.4rem;
 }
-div[class*="st-key-bm_nav_mobile"] [data-testid="stPopover"] > button {
-    width: auto !important;
-    min-height: auto !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+.bm-nav-menu > summary::-webkit-details-marker { display: none; }
+.bm-nav-menu > summary > span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: #000;
+    border-radius: 2px;
+}
+.bm-nav-drop {
+    position: absolute;
+    right: 0;
+    top: 48px;
+    min-width: 160px;
+    background: #fff;
+    border: 1px solid var(--bm-border);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(16, 20, 45, 0.14);
+    padding: 0.35rem;
+    z-index: 60;
+}
+.bm-nav-drop a {
+    display: block;
+    padding: 0.6rem 0.75rem;
     color: var(--bm-text) !important;
-    font-size: 1.35rem !important;
-    line-height: 1 !important;
-    padding: 0.15rem 0.3rem !important;
+    text-decoration: none !important;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 6px;
 }
+.bm-nav-drop a:hover { background: var(--bm-primary-50); color: var(--bm-primary) !important; }
+
 @media (max-width: 640px) {
-    div[class*="st-key-bm_nav_desktop"] { display: none; }
-    div[class*="st-key-bm_nav_mobile"] { display: block; }
+    .bm-nav-links { display: none; }
+    .bm-nav-menu { display: block; }
 }
 
 /* ----- Login card: centered, compact bordered surface. Square inputs and a

@@ -111,46 +111,44 @@ def _do_login(username, password):
     st.rerun()
 
 
-def _go_to(page):
-    st.session_state["_page"] = page
-    st.rerun()
+def _nav_bar(active):
+    """Render the top nav as a single block of hand-written HTML/CSS.
 
-
-def _nav_target():
-    """Return (label, target_page) for the nav action given the current page."""
-    if st.session_state.get("_page") == "about":
-        return "Home", "login"
-    return "About", "about"
-
-
-def _nav_bar():
-    """Nav bar: a plain (non-link) wordmark plus a nav item that reruns the
-    app in place (no full navigation, no new tab).
-
-    On desktop the item shows directly in the bar; on mobile it collapses
-    under a ``☰`` menu.
+    A real navbar (not Streamlit columns/widgets) so it reads like a
+    production site: logo on the left, an About/Home item on the right that
+    collapses into a right-aligned hamburger on mobile. Links use
+    ``target="_self"`` so navigation stays in the same tab, and route through
+    the ``?page=`` query param that ``main()`` reads.
     """
-    label, target = _nav_target()
-    with st.container(key="bm_nav"):
-        left, right = st.columns([3, 1])
-        with left:
-            st.markdown('<div class="bm-nav-logo">Beautiful Mind</div>', unsafe_allow_html=True)
-        with right:
-            # Desktop: the item sits right in the nav bar.
-            with st.container(key="bm_nav_desktop"):
-                if st.button(label, key="nav_desktop"):
-                    _go_to(target)
-            # Mobile: the same item collapsed under a three-line menu.
-            with st.container(key="bm_nav_mobile"):
-                with st.popover("☰"):
-                    if st.button(label, key="nav_mobile"):
-                        _go_to(target)
+    if active == "about":
+        target, label = "home", "Home"
+    else:
+        target, label = "about", "About"
+    st.markdown(
+        f"""
+<div class="bm-nav">
+  <div class="bm-nav-row">
+    <a class="bm-nav-logo" href="?page=home" target="_self">Beautiful Mind</a>
+    <nav class="bm-nav-links">
+      <a href="?page={target}" target="_self">{label}</a>
+    </nav>
+    <details class="bm-nav-menu">
+      <summary aria-label="Open menu"><span></span><span></span><span></span></summary>
+      <div class="bm-nav-drop">
+        <a href="?page={target}" target="_self">{label}</a>
+      </div>
+    </details>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
 
 def login_view():
     """Signed-out landing page: nav bar plus a centered login card."""
     theme.inject_landing()
-    _nav_bar()
+    _nav_bar("login")
 
     # The card is centered via CSS (max-width + margin auto) so it stays put
     # across viewports without spacer columns that add stray whitespace.
@@ -175,7 +173,7 @@ def login_view():
 def about_view():
     """A plain, generic About page describing the research project."""
     theme.inject_landing()
-    _nav_bar()
+    _nav_bar("about")
 
     st.title("About the Project")
     st.write(
@@ -262,7 +260,7 @@ def main():
     _restore_or_wait()
     user = st.session_state.get("user")
     if user is None:
-        if st.session_state.get("_page") == "about":
+        if st.query_params.get("page") == "about":
             about_view()
         else:
             login_view()
