@@ -187,6 +187,28 @@ div[class*="st-key-bm_nav"] .stButton > button {
 }
 div[class*="st-key-bm_nav"] .stButton > button:hover { color: var(--bm-primary) !important; }
 
+/* Desktop shows the nav item directly; mobile collapses it under a ☰ menu. */
+div[class*="st-key-bm_nav_mobile"] { display: none; }
+div[class*="st-key-bm_nav_mobile"] [data-testid="stPopover"] {
+    display: flex;
+    justify-content: flex-end;
+}
+div[class*="st-key-bm_nav_mobile"] [data-testid="stPopover"] > button {
+    width: auto !important;
+    min-height: auto !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--bm-text) !important;
+    font-size: 1.4rem !important;
+    line-height: 1 !important;
+    padding: 0.2rem 0.4rem !important;
+}
+@media (max-width: 640px) {
+    div[class*="st-key-bm_nav_desktop"] { display: none; }
+    div[class*="st-key-bm_nav_mobile"] { display: block; }
+}
+
 /* ----- Login card: a clean bordered surface with a heading, square
    inputs, and a black square right-aligned "Sign in" button ----- */
 div[class*="st-key-bm_login_box"] {
