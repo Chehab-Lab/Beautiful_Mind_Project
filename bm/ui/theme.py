@@ -155,23 +155,31 @@ iframe[title="bm_voice_recorder"] { width: 100%; }
 
 _LANDING_CSS = """
 <style>
-/* ----- Nav bar: plain black wordmark (not a link) + an About/Home toggle
-   button. The toggle is a real Streamlit button so switching pages reruns
-   the app in place instead of doing a browser navigation. ----- */
+/* ----- Nav bar: plain black wordmark (not a link) + an About/Home item.
+   The item is a real Streamlit control so switching pages reruns the app in
+   place instead of doing a browser navigation. ----- */
 div[class*="st-key-bm_nav"] {
     position: sticky;
     top: 0;
     z-index: 50;
     background: var(--bm-surface);
     border-bottom: 1px solid var(--bm-border);
-    padding: 0.9rem 0 0.7rem;
-    margin-bottom: 2.2rem;
+    padding: 0.55rem 0;
+    margin-bottom: 1.6rem;
 }
+/* Keep the logo and the menu on one row at every width (Streamlit columns
+   otherwise stack on narrow screens, dropping the ☰ below the logo). */
+div[class*="st-key-bm_nav"] div[data-testid="stHorizontalBlock"] {
+    flex-wrap: nowrap;
+    align-items: center;
+}
+div[class*="st-key-bm_nav"] div[data-testid="stColumn"] { min-width: 0 !important; }
 .bm-nav-logo {
-    font-size: 1.32rem;
+    font-size: 1.28rem;
     font-weight: 700;
     letter-spacing: -0.01em;
     color: #000;
+    white-space: nowrap;
 }
 div[class*="st-key-bm_nav"] .stButton { display: flex; justify-content: flex-end; }
 div[class*="st-key-bm_nav"] .stButton > button {
@@ -183,11 +191,12 @@ div[class*="st-key-bm_nav"] .stButton > button {
     color: var(--bm-text) !important;
     font-weight: 500;
     font-size: 0.95rem;
-    padding: 0.3rem 0.2rem !important;
+    padding: 0.25rem 0.2rem !important;
 }
 div[class*="st-key-bm_nav"] .stButton > button:hover { color: var(--bm-primary) !important; }
 
-/* Desktop shows the nav item directly; mobile collapses it under a ☰ menu. */
+/* Desktop shows the nav item directly; mobile collapses it under a ☰ menu,
+   pinned to the right of the bar. */
 div[class*="st-key-bm_nav_mobile"] { display: none; }
 div[class*="st-key-bm_nav_mobile"] [data-testid="stPopover"] {
     display: flex;
@@ -200,40 +209,41 @@ div[class*="st-key-bm_nav_mobile"] [data-testid="stPopover"] > button {
     border: none !important;
     box-shadow: none !important;
     color: var(--bm-text) !important;
-    font-size: 1.4rem !important;
+    font-size: 1.35rem !important;
     line-height: 1 !important;
-    padding: 0.2rem 0.4rem !important;
+    padding: 0.15rem 0.3rem !important;
 }
 @media (max-width: 640px) {
     div[class*="st-key-bm_nav_desktop"] { display: none; }
     div[class*="st-key-bm_nav_mobile"] { display: block; }
 }
 
-/* ----- Login card: a clean bordered surface with a heading, square
-   inputs, and a black square right-aligned "Sign in" button ----- */
+/* ----- Login card: centered, compact bordered surface. Square inputs and a
+   black square right-aligned "Log in" button. ----- */
 div[class*="st-key-bm_login_box"] {
-    margin-top: 3.4rem;
-    padding: 2.3rem 2.1rem 2rem;
+    max-width: 380px;
+    margin: 2rem auto 0;
+    padding: 1.8rem 1.7rem 1.5rem;
     background: var(--bm-surface);
     border: 1px solid var(--bm-border);
-    border-radius: 16px;
-    box-shadow: 0 18px 40px -20px rgba(20, 25, 60, 0.22), 0 2px 6px rgba(20, 25, 60, 0.04);
+    border-radius: 14px;
+    box-shadow: 0 8px 26px -14px rgba(20, 25, 60, 0.18);
 }
-.bm-login-head { margin-bottom: 1.5rem; }
+.bm-login-head { margin-bottom: 1.2rem; }
 .bm-login-title {
-    font-size: 1.55rem;
+    font-size: 1.45rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--bm-text);
     line-height: 1.15;
 }
 .bm-login-sub {
-    margin-top: 0.35rem;
-    font-size: 0.95rem;
+    margin-top: 0.25rem;
+    font-size: 0.92rem;
     color: var(--bm-muted);
 }
 
-/* The card is the only visible boundary — drop the form's own border. */
+/* The card is the only visible boundary — drop the form's own border/padding. */
 div[class*="st-key-bm_login_box"] [data-testid="stForm"] {
     border: none;
     padding: 0;
@@ -250,15 +260,16 @@ div[class*="st-key-bm_login_box"] .stTextInput input:focus {
     box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12) !important;
 }
 
+/* Log in button: black, square, right-aligned inside the card. */
 div[class*="st-key-bm_login_box"] .stFormSubmitButton {
     display: flex;
     justify-content: flex-end;
-    margin-top: 0.5rem;
+    margin-top: 0.3rem;
 }
 div[class*="st-key-bm_login_box"] .stFormSubmitButton > button {
     width: auto !important;
     min-height: auto !important;
-    padding: 0.62rem 2rem;
+    padding: 0.6rem 2rem;
     border-radius: 0 !important;
     background: #000 !important;
     color: #fff !important;

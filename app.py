@@ -148,28 +148,28 @@ def _nav_bar():
 
 
 def login_view():
-    """Signed-out landing page: nav bar plus a right-aligned login card."""
+    """Signed-out landing page: nav bar plus a centered login card."""
     theme.inject_landing()
     _nav_bar()
 
-    _, mid = st.columns([1.5, 1.15])
-    with mid:
-        with st.container(key="bm_login_box"):
-            st.markdown(
-                '<div class="bm-login-head">'
-                '<div class="bm-login-title">Welcome</div>'
-                '<div class="bm-login-sub">Log in to continue to Beautiful Mind.</div>'
-                "</div>",
-                unsafe_allow_html=True,
+    # The card is centered via CSS (max-width + margin auto) so it stays put
+    # across viewports without spacer columns that add stray whitespace.
+    with st.container(key="bm_login_box"):
+        st.markdown(
+            '<div class="bm-login-head">'
+            '<div class="bm-login-title">Welcome</div>'
+            '<div class="bm-login-sub">Log in to continue to Beautiful Mind.</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        with st.form("login"):
+            username = st.text_input("Username", placeholder="Enter your username")
+            password = st.text_input(
+                "Password", type="password", placeholder="Enter your password"
             )
-            with st.form("login"):
-                username = st.text_input("Username", placeholder="Enter your username")
-                password = st.text_input(
-                    "Password", type="password", placeholder="Enter your password"
-                )
-                submitted = st.form_submit_button("Log in", type="primary")
-            if submitted:
-                _do_login(username, password)
+            submitted = st.form_submit_button("Log in", type="primary")
+        if submitted:
+            _do_login(username, password)
 
 
 def about_view():
