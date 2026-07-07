@@ -79,10 +79,27 @@
     text-align: center;
   }
   .hint.err { color: #ff3b30; }
+  /* Loading spinner shown until the recorder is rendered. */
+  .loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+  }
+  .loader .spin {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(10, 10, 10, 0.12);
+    border-top-color: #0A0A0A;
+    animation: bmspin 0.8s linear infinite;
+  }
+  @keyframes bmspin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="loader" id="loader"><div class="spin"></div></div>
+  <div class="wrap" id="wrap" style="display: none;">
     <div class="stage">
       <div class="ring" id="ring"></div>
       <button class="btn idle" id="btn" aria-label="Record"><span class="ico"></span></button>
@@ -220,9 +237,18 @@ btn.addEventListener("click", async () => {
   }
 });
 
-Streamlit.onRender(() => Streamlit.setFrameHeight(230));
+var revealed = false;
+function reveal() {
+  if (revealed) return;
+  revealed = true;
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("wrap").style.display = "flex";
+}
+Streamlit.onRender(() => { reveal(); Streamlit.setFrameHeight(230); });
 Streamlit.setComponentReady();
 Streamlit.setFrameHeight(230);
+// Fallback in case the render event is missed.
+setTimeout(reveal, 1200);
 </script>
 </body>
 </html>
