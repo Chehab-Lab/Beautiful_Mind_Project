@@ -20,12 +20,34 @@ from bm.ui import admin as admin_ui  # noqa: E402
 from bm.ui import common  # noqa: E402
 from bm.ui import doctor as doctor_ui  # noqa: E402
 from bm.ui import patient as patient_ui  # noqa: E402
+from bm.ui import pwa  # noqa: E402
 from bm.ui import theme  # noqa: E402
 
-st.set_page_config(page_title="Beautiful Mind", layout="centered")
+_ICON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app-icon.png")
+st.set_page_config(
+    page_title="Beautiful Mind",
+    page_icon=_ICON if os.path.exists(_ICON) else None,
+    layout="centered",
+)
 
 theme.inject()
-db.init_db()
+
+# Inject the custom PWA manifest/icon once per page load; it persists in the
+# parent document head, so re-rendering the iframe on every rerun only adds
+# churn (and load-time flicker).
+if not st.session_state.get("_pwa_injected"):
+    pwa.inject()
+    st.session_state["_pwa_injected"] = True
+
+
+@st.cache_resource
+def _init_db_once():
+    """Create tables / seed admin once per process, not on every rerun."""
+    db.init_db()
+    return True
+
+
+_init_db_once()
 
 COOKIE_NAME = "bm_auth"
 REMEMBER_DAYS = 60

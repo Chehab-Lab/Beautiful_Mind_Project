@@ -72,6 +72,21 @@ def _record(patient):
         )
         return
 
+    # The recorder is a custom-component iframe. Loading it on the initial page
+    # render makes Streamlit register the component and rerun the whole app,
+    # which briefly shows the patient view duplicated. Reveal it behind a button
+    # instead: the click reruns only this fragment, so the iframe loads without
+    # a whole-app rerun and there is no duplication.
+    if not st.session_state.get("show_recorder"):
+        st.caption(
+            "Recordings are transcribed in the background and appear under "
+            "**My notes** when ready."
+        )
+        if st.button("New voice note", type="primary", key="show_recorder_btn"):
+            st.session_state["show_recorder"] = True
+            st.rerun(scope="fragment")
+        return
+
     result = recorder.record_button(key="voice_recorder")
     st.caption(
         "Recordings are transcribed in the background and appear under "
